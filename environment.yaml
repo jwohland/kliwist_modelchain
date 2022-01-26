@@ -1,0 +1,15 @@
+name: kliwist_modelchain
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - ipykernel
+  - pandas
+  - matplotlib
+  - xarray
+  - dask
+  - intake-esm
+  - dask-jobqueue
+  - jupyter
+  - cartopy
