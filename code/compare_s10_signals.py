@@ -71,7 +71,13 @@ def preprocess_cordex_dataset(ds, identifier, rotated=True):
 
     try:
         ds = preproc.replace_coords(ds)
-        # ignore those datasets that have x and y coordinates  #todo there mus be a neater way
+        cont = True
+    except ValueError:
+        print("Probably conflicting sizes for rlat dimension. Ignoring " + identifier)
+        cont = False
+
+    # ignore those datasets that have x and y coordinates  #todo there mus be a neater way
+    if cont:
         try:
             lol = ds["x"]
             print(identifier + " does not use rotated coordinates and will be ignored")
@@ -86,18 +92,17 @@ def preprocess_cordex_dataset(ds, identifier, rotated=True):
                         "time_bounds",
                         "Lambert_Conformal",
                         "height",
+                        "rotated_latitude_longitude",
+                        "lat_vertices",
+                        "lon_vertices",
                     ],
                     errors="ignore",
                 )
-                    .assign_coords({"identifier": identifier})
-                    .groupby("time.year")
-                    .mean("time")
+                .assign_coords({"identifier": identifier})
+                .groupby("time.year")
+                .mean("time")
             )
             return ds
-    except ValueError:
-        print("Probably conflicting sizes for rlat dimension. Ignoring " + identifier)
-
-
 
 
 def dictionary_to_dataset(data_dict):
@@ -131,21 +136,51 @@ def plot_array(ds):
         figsize=(10, 10),
         dpi=300,
     )
-    plt.subplots_adjust(bottom=0.15)
     cbar_ax = f.add_axes([0.2, 0.12, 0.6, 0.01])
-    label = "wind speed in 2080 - 2100"
+    label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
-    for i, ident in enumerate(ds.identifier.values):
+    for i, ident in enumerate(sorted(ds.identifier.values)):
         GCM, RCM = ident.split(".")[1], ident.split(".")[3]
+        # plot values
         ds["sfcWind"].sel(identifier=ident).plot(
             ax=axs.flatten()[i],
+            x="lon",
+            y="lat",
             cbar_ax=cbar_ax,
-            vmin=0,
-            vmax=12,
+            vmin=-0.8,
+            vmax=0.8,
             extend="both",
+            cmap=plt.get_cmap("coolwarm"),
             cbar_kwargs={"label": label, "orientation": "horizontal"},
         )
+        # add hatching
+        ds["sfcWind"].sel(identifier=ident).plot(
+            ax=axs.flatten()[i],
+            x="lon",
+            y="lat",
+            levels=[-10, -0.1, 0.1, 10],
+            colors=["none", "white", "none"],
+            add_colorbar=False,
+        )
+
         axs.flatten()[i].set_title(GCM + ", " + RCM, fontsize=6)
+
+    for ax in axs.flatten():
+        ax.add_feature(cf.COASTLINE)
+        ax.add_feature(cf.BORDERS)
+    plt.subplots_adjust(0.05, 0.15, 0.95, 0.99)
+
+
+def update_identifier(ds):
+    """
+    Create joint identifier that is identical for historical and rcp period to be able to subtract them
+    :param ds:
+    :return:
+    """
+    ds["identifier"] = [x.replace(".historical", "") for x in ds.identifier.values]
+    ds["identifier"] = [
+        x.replace(".rcp45", "") for x in ds.identifier.values
+    ]  # todo generalize
 
 
 cordex_dict_rcp45 = get_dataset_dictionary(
@@ -164,3 +199,10 @@ ds_hist = dictionary_to_dataset(
 ds_hist = ds_hist.sel(year=slice("1985", "2005")).mean("year")
 
 # calculate difference where it exists, ignore time
+update_identifier(ds_hist)
+update_identifier(ds_rcp45)
+diff = ds_rcp45 - ds_hist
+
+# plotting
+diff = diff.sel(rlat=slice(-10, 20), rlon=slice(-5, 20))
+plot_array(diff)
