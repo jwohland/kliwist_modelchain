@@ -16,6 +16,7 @@ def get_dataset_dictionary(
     CORDEX_domain,
     experiment_id,
     per_RCM=False,
+    GCMs=None,
 ):
     """
     Check data availability and output dictionary of datasets
@@ -25,6 +26,7 @@ def get_dataset_dictionary(
     :param CORDEX_domain: e.g., "EUR-11"
     :param experiment_id: e.g., "rcp26", "rcp45, "historical"
     :param per_RCM: workaround to build up dictionary stepwise, needed because full loading during historical period fails
+    :param GCMs: list of GCMs that are being searched for. Only implemented for CMIP5
     :return:
     """
     link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster #todo generalize
@@ -33,29 +35,50 @@ def get_dataset_dictionary(
     elif experiment_family == "CORDEX":
         catalogue = "mistral-cordex.json"
     cat = intake.open_esm_datastore(link_catalogue + catalogue)
-    subset = cat.search(
-        variable_id=variable_id,
-        frequency=frequency,
-        CORDEX_domain=CORDEX_domain,
-        experiment_id=experiment_id,
-        member="r1i1p1",  # todo this needs to be generalized. Chosen here to avoid duplicates
-    )
-    if per_RCM:
-        import numpy as np
-
-        RCMs = list(np.unique(subset.df.model_id))
-        ds_dict = {}
-        for RCM in RCMs:
-            try:
-                ds_dict.update(
-                    subset.search(model_id=RCM).to_dataset_dict(
-                        cdf_kwargs={"use_cftime": True, "chunks": {}}
+    if experiment_family == "CMIP5":
+        subset = cat.search(
+            variable=variable_id,
+            frequency=frequency,
+            experiment=experiment_id,
+            ensemble_member="r1i1p1",  # todo this needs to be generalized. Chosen here to avoid duplicates
+        )
+        if GCMs:  # filter for those GCMs that are of interest
+            ds_dict = {}
+            for GCM in GCMs:
+                try:
+                    ds_dict.update(
+                        subset.search(model=GCM).to_dataset_dict(
+                            cdf_kwargs={"use_cftime": True, "chunks": {}}
+                        )
                     )
-                )
-            except:
-                print(RCM + " has a problem")
-    else:
-        ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
+                except:
+                    print(GCM + " not found")
+        else:
+            ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
+    elif experiment_family == "CORDEX":
+        subset = cat.search(
+            variable_id=variable_id,
+            frequency=frequency,
+            CORDEX_domain=CORDEX_domain,
+            experiment_id=experiment_id,
+            member="r1i1p1",  # todo this needs to be generalized. Chosen here to avoid duplicates
+        )
+        if per_RCM:
+            import numpy as np
+
+            RCMs = list(np.unique(subset.df.model_id))
+            ds_dict = {}
+            for RCM in RCMs:
+                try:
+                    ds_dict.update(
+                        subset.search(model_id=RCM).to_dataset_dict(
+                            cdf_kwargs={"use_cftime": True, "chunks": {}}
+                        )
+                    )
+                except:
+                    print(RCM + " has a problem")
+        else:
+            ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
     return ds_dict
 
 
@@ -206,3 +229,15 @@ diff = ds_rcp45 - ds_hist
 # plotting
 diff = diff.sel(rlat=slice(-10, 20), rlon=slice(-5, 20))
 plot_array(diff)
+plt.savefig("../plots/RCM-GCM_windchange.png", dpi=300)
+
+# load CMIP5 models
+import numpy as np
+
+GCMs = np.unique(
+    [x.split(".")[1] for x in diff.identifier.values]
+)  # this gives a combination of institute and model id that is difficult to seperate because "-" is used as separator and as part of the model and institute name
+# manual list
+GCMs = ["CNRM-CM5", "EC-EARTH", "IPSL-CM5A-MR", "HadGEM2-ES", "MPI-ESM-LR", "NorESM1-M"]
+CMIP5_dict_rcp45 = get_dataset_dictionary("CMIP5", "sfcWind", "mon", "", "rcp45", GCMs)
+ds_CMIP5 = dictionary_to_dataset(CMIP5_dict_rcp45)  # todo doesn't work yet
