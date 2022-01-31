@@ -82,7 +82,7 @@ def get_dataset_dictionary(
     return ds_dict
 
 
-def preprocess_cordex_dataset(ds, identifier, rotated=True):
+def preprocess_cordex_dataset(ds, identifier):
     """
 
     :param ds:
@@ -99,7 +99,7 @@ def preprocess_cordex_dataset(ds, identifier, rotated=True):
         print("Probably conflicting sizes for rlat dimension. Ignoring " + identifier)
         cont = False
 
-    # ignore those datasets that have x and y coordinates  #todo there mus be a neater way
+    # ignore those datasets that have x and y coordinates  #todo there must be a neater way
     if cont:
         try:
             lol = ds["x"]
@@ -145,7 +145,7 @@ def dictionary_to_dataset(data_dict):
     list_ds = [
         preprocess_cordex_dataset(data_dict[identifier], identifier)
         for identifier in data_dict.keys()
-    ]
+    ]  # todo generalization needed to include CMIP data. Probably a 'preprocess_CMIP5_dataset' function that cuts out Europe/doi?
     list_ds = [el for el in list_ds if el]  # remove None
     return xr.concat(list_ds, dim="identifier")
 
