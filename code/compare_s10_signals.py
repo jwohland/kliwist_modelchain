@@ -168,23 +168,84 @@ def dictionary_to_dataset(data_dict, cordex=True):
             for identifier in data_dict.keys()
         ]
     list_ds = [el for el in list_ds if el]  # remove None
+    if not cordex:
+        # regrid all CMIP5 results to grid of first model
+        import xesmf as xe
+
+        for i in range(1, len(list_ds)):
+            regridder = xe.Regridder(list_ds[i], list_ds[0], "bilinear")
+            list_ds[i] = regridder(list_ds[i])
     return xr.concat(list_ds, dim="identifier")
 
 
 def plot_array(ds):
     # prepare plotting
     f, axs = plt.subplots(
-        ncols=4,
+        ncols=6,
         nrows=5,
         subplot_kw={"projection": ccrs.PlateCarree()},
-        figsize=(10, 10),
+        figsize=(10, 6),
         dpi=300,
     )
     cbar_ax = f.add_axes([0.2, 0.12, 0.6, 0.01])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
-    for i, ident in enumerate(sorted(ds.identifier.values)):
+    i, j, GCM_old = -1, 0, "No"
+
+    for ident in sorted(ds.identifier.values):
         GCM, RCM = ident.split(".")[1], ident.split(".")[3]
+        if GCM != GCM_old:  # move one column to the right for each new GCM
+            # turn off axes in plots without data
+            [axs[j_e, i].set_axis_off for j_e in range(j + 1, 5)]
+            i += 1
+            j = 0
+            GCM_old = GCM
+        ax=axs[j,i]
+        # plot values
+        ds["sfcWind"].sel(identifier=ident).plot(
+            ax=ax,
+            x="lon",
+            y="lat",
+            cbar_ax=cbar_ax,
+            vmin=-0.8,
+            vmax=0.8,
+            extend="both",
+            cmap=plt.get_cmap("coolwarm"),
+            cbar_kwargs={"label": label, "orientation": "horizontal"},
+        )
+        # add hatching
+        ds["sfcWind"].sel(identifier=ident).plot(
+            ax=ax,
+            x="lon",
+            y="lat",
+            levels=[-10, -0.1, 0.1, 10],
+            colors=["none", "white", "none"],
+            add_colorbar=False,
+        )
+
+        ax.set_title(GCM + ", " + RCM, fontsize=4)
+        j += 1
+        ax.add_feature(cf.COASTLINE)
+        ax.add_feature(cf.BORDERS)
+    plt.subplots_adjust(0.05, 0.15, 0.95, 0.99)
+
+
+def plot_array_CMIP5(
+    ds,
+):  # todo currently copied from plot_array need cleaner plotting functions!
+    # prepare plotting
+    f, axs = plt.subplots(
+        ncols=5,
+        nrows=1,
+        subplot_kw={"projection": ccrs.PlateCarree()},
+        figsize=(8, 2),
+        dpi=300,
+    )
+    cbar_ax = f.add_axes([0.2, 0.12, 0.6, 0.05])
+    label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
+
+    for i, ident in enumerate(sorted(ds.identifier.values)):
+        GCM = ident.split(".")[1]
         # plot values
         ds["sfcWind"].sel(identifier=ident).plot(
             ax=axs.flatten()[i],
@@ -207,7 +268,7 @@ def plot_array(ds):
             add_colorbar=False,
         )
 
-        axs.flatten()[i].set_title(GCM + ", " + RCM, fontsize=6)
+        axs.flatten()[i].set_title(GCM, fontsize=6)
 
     for ax in axs.flatten():
         ax.add_feature(cf.COASTLINE)
@@ -260,7 +321,28 @@ GCMs = np.unique(
 )  # this gives a combination of institute and model id that is difficult to seperate because "-" is used as separator and as part of the model and institute name
 # manual list
 GCMs = ["CNRM-CM5", "EC-EARTH", "IPSL-CM5A-MR", "HadGEM2-ES", "MPI-ESM-LR", "NorESM1-M"]
+
+# load RCP45
 CMIP5_dict_rcp45 = get_dataset_dictionary(
     "CMIP5", "sfcWind", "mon", "", "rcp45", GCMs=GCMs
 )  # todo: NorESM1-M not found
-ds_CMIP5 = dictionary_to_dataset(CMIP5_dict_rcp45, cordex=False)
+ds_CMIP5_rcp45 = dictionary_to_dataset(CMIP5_dict_rcp45, cordex=False)
+
+# load historical
+CMIP5_dict_hist = get_dataset_dictionary(
+    "CMIP5", "sfcWind", "mon", "", "historical", GCMs=GCMs
+)  # todo: NorESM1-M not found
+ds_CMIP5_hist = dictionary_to_dataset(CMIP5_dict_hist, cordex=False)
+
+ds_CMIP5_rcp45 = ds_CMIP5_rcp45.sel(year=slice(2080, 2100)).mean(dim="year")
+ds_CMIP5_hist = ds_CMIP5_hist.sel(year=slice(1985, 2005)).mean(dim="year")
+
+update_identifier(ds_CMIP5_hist)
+update_identifier(ds_CMIP5_rcp45)
+
+
+diff = ds_CMIP5_rcp45 - ds_CMIP5_hist
+
+# plotting
+plot_array_CMIP5(diff)  # todo CMIP5 models use different grids in their output!
+plt.savefig("../plots/CMIP5_windchange.png", dpi=300)
