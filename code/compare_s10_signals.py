@@ -200,7 +200,7 @@ def plot_array(ds):
             i += 1
             j = 0
             GCM_old = GCM
-        ax=axs[j,i]
+        ax = axs[j, i]
         # plot values
         ds["sfcWind"].sel(identifier=ident).plot(
             ax=ax,
@@ -311,7 +311,9 @@ diff = ds_rcp45 - ds_hist
 # plotting
 diff = diff.sel(rlat=slice(-10, 20), rlon=slice(-5, 20))
 plot_array(diff)
-plt.savefig("../plots/RCM-GCM_windchange.png", dpi=300)
+plt.savefig(
+    "../plots/RCM-GCM_windchange.png", dpi=300, facecolor="w", transparent=False
+)
 
 # load CMIP5 models
 import numpy as np
@@ -345,4 +347,4 @@ diff = ds_CMIP5_rcp45 - ds_CMIP5_hist
 
 # plotting
 plot_array_CMIP5(diff)  # todo CMIP5 models use different grids in their output!
-plt.savefig("../plots/CMIP5_windchange.png", dpi=300)
+plt.savefig("../plots/CMIP5_windchange.png", dpi=300, facecolor="w", transparent=False)
