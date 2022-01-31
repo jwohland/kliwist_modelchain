@@ -54,7 +54,9 @@ def get_dataset_dictionary(
                 except:
                     print(GCM + " not found")
         else:
-            ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
+            ds_dict = subset.to_dataset_dict(
+                cdf_kwargs={"use_cftime": True, "chunks": {}}
+            )
     elif experiment_family == "CORDEX":
         subset = cat.search(
             variable_id=variable_id,
@@ -78,7 +80,9 @@ def get_dataset_dictionary(
                 except:
                     print(RCM + " has a problem")
         else:
-            ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
+            ds_dict = subset.to_dataset_dict(
+                cdf_kwargs={"use_cftime": True, "chunks": {}}
+            )
     return ds_dict
 
 
@@ -128,7 +132,18 @@ def preprocess_cordex_dataset(ds, identifier):
             return ds
 
 
-def dictionary_to_dataset(data_dict):
+def preprocess_cmip_dataset(ds, identifier):
+    ds = ds.sel(lat=slice(35, 70), lon=slice(0, 60))
+    ds = (
+        ds.drop(["lat_bnds", "lon_bnds", "time_bnds"], errors="ignore")
+        .assign_coords({"identifier": identifier})
+        .groupby("time.year")
+        .mean("time")
+    )
+    return ds
+
+
+def dictionary_to_dataset(data_dict, cordex=True):
     """
     takes dictionary with keys of the form
 
@@ -142,10 +157,16 @@ def dictionary_to_dataset(data_dict):
     :param data_dict:
     :return:
     """
-    list_ds = [
-        preprocess_cordex_dataset(data_dict[identifier], identifier)
-        for identifier in data_dict.keys()
-    ]  # todo generalization needed to include CMIP data. Probably a 'preprocess_CMIP5_dataset' function that cuts out Europe/doi?
+    if cordex:
+        list_ds = [
+            preprocess_cordex_dataset(data_dict[identifier], identifier)
+            for identifier in data_dict.keys()
+        ]  # todo generalization needed. Maybe preprocess class with boolean cordex variable?
+    else:
+        list_ds = [
+            preprocess_cmip_dataset(data_dict[identifier], identifier)
+            for identifier in data_dict.keys()
+        ]
     list_ds = [el for el in list_ds if el]  # remove None
     return xr.concat(list_ds, dim="identifier")
 
@@ -239,5 +260,7 @@ GCMs = np.unique(
 )  # this gives a combination of institute and model id that is difficult to seperate because "-" is used as separator and as part of the model and institute name
 # manual list
 GCMs = ["CNRM-CM5", "EC-EARTH", "IPSL-CM5A-MR", "HadGEM2-ES", "MPI-ESM-LR", "NorESM1-M"]
-CMIP5_dict_rcp45 = get_dataset_dictionary("CMIP5", "sfcWind", "mon", "", "rcp45", GCMs)
-ds_CMIP5 = dictionary_to_dataset(CMIP5_dict_rcp45)  # todo doesn't work yet
+CMIP5_dict_rcp45 = get_dataset_dictionary(
+    "CMIP5", "sfcWind", "mon", "", "rcp45", GCMs=GCMs
+)  # todo: NorESM1-M not found
+ds_CMIP5 = dictionary_to_dataset(CMIP5_dict_rcp45, cordex=False)
