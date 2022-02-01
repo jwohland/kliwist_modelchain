@@ -76,7 +76,7 @@ def plot_array_CMIP5(
     f, axs = plt.subplots(
         ncols=5,
         nrows=1,
-        subplot_kw={"projection": ccrs.PlateCarree()},
+        subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
         figsize=(8, 2),
         dpi=300,
     )
