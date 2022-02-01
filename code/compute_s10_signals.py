@@ -130,7 +130,6 @@ def preprocess_cordex_dataset(ds, identifier):
 
 
 def preprocess_cmip_dataset(ds, identifier):
-    ds = ds.sel(lat=slice(35, 70), lon=slice(0, 60))
     ds = (
         ds.drop(["lat_bnds", "lon_bnds", "time_bnds"], errors="ignore")
         .assign_coords({"identifier": identifier})
