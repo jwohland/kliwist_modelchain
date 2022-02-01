@@ -16,7 +16,6 @@ def plot_array(ds):
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
     i, j, GCM_old = -1, 0, "No"
-
     for ident in sorted(ds.identifier.values):
         GCM, RCM = ident.split(".")[1], ident.split(".")[3]
         if GCM != GCM_old:  # move one column to the right for each new GCM
@@ -111,5 +110,5 @@ plt.savefig(
 # CMIP5
 
 diff = xr.open_dataset("../output/cmip5_diff_rcp45.nc")
-plot_array_CMIP5(diff)  # todo CMIP5 models use different grids in their output!
+plot_array_CMIP5(diff)
 plt.savefig("../plots/CMIP5_windchange.png", dpi=300, facecolor="w", transparent=False)
