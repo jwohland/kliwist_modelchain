@@ -227,6 +227,7 @@ def plot_array(ds):
         j += 1
         ax.add_feature(cf.COASTLINE)
         ax.add_feature(cf.BORDERS)
+        ax.set_extent([-15, 50, 35, 70])
     plt.subplots_adjust(0.05, 0.15, 0.95, 0.99)
 
 
@@ -309,7 +310,6 @@ update_identifier(ds_rcp45)
 diff = ds_rcp45 - ds_hist
 
 # plotting
-diff = diff.sel(rlat=slice(-10, 20), rlon=slice(-5, 20))
 plot_array(diff)
 plt.savefig(
     "../plots/RCM-GCM_windchange.png", dpi=300, facecolor="w", transparent=False
