@@ -100,7 +100,9 @@ def preprocess_cordex_dataset(ds, identifier):
         )  # fails of size of rlat/rlon dimension doesn't match
     except ValueError:
         if "MOHC-HadREM3-GA7-05.historical" not in identifier:
-            print("Unexpected mismatch in " + identifier)  # problem known for the mentioned model and irrelevant for this study because affects only historical runs
+            print(
+                "Unexpected mismatch in " + identifier
+            )  # problem known for the mentioned model and irrelevant for this study because affects only historical runs
         return
 
     # Remap those datasets that have x and y coordinates  #todo there must be a neater way
