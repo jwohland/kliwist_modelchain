@@ -93,40 +93,42 @@ def preprocess_cordex_dataset(ds, identifier):
     """
     from cordex import preprocessing as preproc
 
+    # set coordinates to standard values
     try:
-        ds = preproc.replace_coords(ds)
-        cont = True
+        ds = preproc.replace_coords(
+            ds
+        )  # fails of size of rlat/rlon dimension doesn't match
     except ValueError:
-        print("Probably conflicting sizes for rlat dimension. Ignoring " + identifier)
-        cont = False
+        if "MOHC-HadREM3-GA7-05.historical" not in identifier:
+            print("Unexpected mismatch in " + identifier)  # problem known for the mentioned model and irrelevant for this study because affects only historical runs
+        return
 
-    # ignore those datasets that have x and y coordinates  #todo there must be a neater way
-    if cont:
-        try:
-            lol = ds["x"]
-            print(identifier + " does not use rotated coordinates and will be ignored")
-        except:
-            ds = (
-                ds.drop(
-                    [
-                        "time_bnds",
-                        "rotated_pole",
-                        "bounds_lon",
-                        "bounds_lat",
-                        "time_bounds",
-                        "Lambert_Conformal",
-                        "height",
-                        "rotated_latitude_longitude",
-                        "lat_vertices",
-                        "lon_vertices",
-                    ],
-                    errors="ignore",
-                )
-                .assign_coords({"identifier": identifier})
-                .groupby("time.year")
-                .mean("time")
-            )
-            return ds
+    # Remap those datasets that have x and y coordinates  #todo there must be a neater way
+    if "x" in ds.keys():
+        ds = preproc.remap_lambert_conformal(ds, domain="EUR-11")
+        print(identifier + " does not use rotated coordinates and is remapped")
+        ds = ds.drop_dims(["x", "y"])
+    ds = (
+        ds.drop(
+            [
+                "time_bnds",
+                "rotated_pole",
+                "bounds_lon",
+                "bounds_lat",
+                "time_bounds",
+                "Lambert_Conformal",
+                "height",
+                "rotated_latitude_longitude",
+                "lat_vertices",
+                "lon_vertices",
+            ],
+            errors="ignore",
+        )
+        .groupby("time.year")
+        .mean("time")
+        .assign_coords({"identifier": identifier})
+    )
+    return ds
 
 
 def preprocess_cmip_dataset(ds, identifier):
@@ -157,7 +159,7 @@ def dictionary_to_dataset(data_dict, cordex=True):
         list_ds = [
             preprocess_cordex_dataset(data_dict[identifier], identifier)
             for identifier in data_dict.keys()
-        ]  # todo generalization needed. Maybe preprocess class with boolean cordex variable?
+        ]
     else:
         list_ds = [
             preprocess_cmip_dataset(data_dict[identifier], identifier)
