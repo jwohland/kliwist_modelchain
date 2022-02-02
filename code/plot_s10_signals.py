@@ -22,7 +22,7 @@ def plot_array(ds):
         figsize=(10, 8),
         dpi=300,
     )
-    cbar_ax = f.add_axes([0.2, 0.12, 0.6, 0.01])
+    cbar_ax = f.add_axes([0.2, 0.05, 0.6, 0.01])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
     for ident in sorted(ds.identifier.values):
@@ -66,7 +66,7 @@ def plot_array(ds):
             verticalalignment="center",
             transform=axs[j, 0].transAxes,
         )
-    plt.subplots_adjust(0.05, 0.15, 0.95, 0.99, hspace=0.05, wspace=0.05)
+    plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
 
 
 def plot_array_CMIP5(
