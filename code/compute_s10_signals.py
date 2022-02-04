@@ -143,7 +143,7 @@ def preprocess_cmip_dataset(ds, identifier):
     return ds
 
 
-def dictionary_to_dataset(data_dict, cordex=True):
+def dictionary_to_dataset(data_dict, experiment_family):
     """
     takes dictionary with keys of the form
 
@@ -157,7 +157,7 @@ def dictionary_to_dataset(data_dict, cordex=True):
     :param data_dict:
     :return:
     """
-    if cordex:
+    if experiment_family.lower() == "cordex":
         list_ds = [
             preprocess_cordex_dataset(data_dict[identifier], identifier)
             for identifier in data_dict.keys()
@@ -168,7 +168,7 @@ def dictionary_to_dataset(data_dict, cordex=True):
             for identifier in data_dict.keys()
         ]
     list_ds = [el for el in list_ds if el]  # remove None
-    if not cordex:
+    if experiment_family.lower() == "cmip5":
         # regrid all CMIP5 results to grid of first model
         import xesmf as xe
 
@@ -178,67 +178,75 @@ def dictionary_to_dataset(data_dict, cordex=True):
     return xr.concat(list_ds, dim="identifier")
 
 
-def update_identifier(ds):
+def update_identifier(ds, experiment_id):
     """
     Create joint identifier that is identical for historical and rcp period to be able to subtract them
     :param ds:
     :return:
     """
-    ds["identifier"] = [x.replace(".historical", "") for x in ds.identifier.values]
     ds["identifier"] = [
-        x.replace(".rcp45", "") for x in ds.identifier.values
-    ]  # todo generalize
+        x.replace("." + experiment_id, "") for x in ds.identifier.values
+    ]
 
 
-cordex_dict_rcp45 = get_dataset_dictionary(
-    "CORDEX", "sfcWind", "mon", "EUR-11", "rcp45"
-)
-cordex_dict_hist = get_dataset_dictionary(
-    "CORDEX", "sfcWind", "mon", "EUR-11", "historical", per_RCM=True
-)  # doesn't work out of the box. Have to exclude by looping over all RCMs and ignoring those with failing imports
+def calculate_mean(
+    experiment_family,
+    variable_id,
+    frequency,
+    CORDEX_domain,
+    experiment_id,
+    per_RCM=False,
+    GCMs=None,
+):
+    ds_dict = get_dataset_dictionary(
+        experiment_family,
+        variable_id,
+        frequency,
+        CORDEX_domain,
+        experiment_id,
+        per_RCM,
+        GCMs=GCMs,
+    )
+    ds = dictionary_to_dataset(ds_dict, experiment_family)
+    if experiment_id == "historical":
+        years = slice("1985", "2005")
+    else:
+        years = slice("2080", "2100")
+    ds = ds.sel(year=years).mean("year")
+    return ds
 
-ds_rcp45 = dictionary_to_dataset(cordex_dict_rcp45)
-ds_rcp45 = ds_rcp45.sel(year=slice("2080", "2100")).mean("year")
 
-ds_hist = dictionary_to_dataset(
-    cordex_dict_hist
-)  # some have 413 rlats etc. even though they should have 412
-ds_hist = ds_hist.sel(year=slice("1985", "2005")).mean("year")
+for experiment_family in ["CORDEX", "CMIP5"]:
+    if experiment_family == "CMIP5":
+        GCMs = [
+            "CNRM-CM5",
+            "EC-EARTH",
+            "IPSL-CM5A-MR",
+            "HadGEM2-ES",
+            "MPI-ESM-LR",
+            "NorESM1-M",
+        ]
+        per_RCM = False
+    else:
+        GCMs, per_RCM = None, True
+    ds_ref = calculate_mean(
+        experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs
+    )
+    ds_ref.to_netcdf(
+        "../output/" + experiment_family.lower() + "_mean_historical.nc"
+    )  # save mean historical
+    update_identifier(ds_ref, "historical")
+    for experiment_id in ["rcp45"]:  # extend to ["rcp26", "rcp45", "rcp85"]
+        ds_future = calculate_mean(
+            experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
+        )
+        ds_ref.to_netcdf(
+            "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
+        )  # save mean future
+        update_identifier(ds_future, experiment_id)
 
-# calculate difference where it exists, ignore time
-update_identifier(ds_hist)
-update_identifier(ds_rcp45)
-diff = ds_rcp45 - ds_hist
-
-diff.to_netcdf("../output/cordex_diff_rcp45.nc")
-
-# load CMIP5 models
-
-
-GCMs = np.unique(
-    [x.split(".")[1] for x in diff.identifier.values]
-)  # this gives a combination of institute and model id that is difficult to seperate because "-" is used as separator and as part of the model and institute name
-# manual list
-GCMs = ["CNRM-CM5", "EC-EARTH", "IPSL-CM5A-MR", "HadGEM2-ES", "MPI-ESM-LR", "NorESM1-M"]
-
-# load RCP45
-CMIP5_dict_rcp45 = get_dataset_dictionary(
-    "CMIP5", "sfcWind", "mon", "", "rcp45", GCMs=GCMs
-)  # todo: NorESM1-M not found
-ds_CMIP5_rcp45 = dictionary_to_dataset(CMIP5_dict_rcp45, cordex=False)
-
-# load historical
-CMIP5_dict_hist = get_dataset_dictionary(
-    "CMIP5", "sfcWind", "mon", "", "historical", GCMs=GCMs
-)  # todo: NorESM1-M not found
-ds_CMIP5_hist = dictionary_to_dataset(CMIP5_dict_hist, cordex=False)
-
-ds_CMIP5_rcp45 = ds_CMIP5_rcp45.sel(year=slice(2080, 2100)).mean(dim="year")
-ds_CMIP5_hist = ds_CMIP5_hist.sel(year=slice(1985, 2005)).mean(dim="year")
-
-update_identifier(ds_CMIP5_hist)
-update_identifier(ds_CMIP5_rcp45)
-
-diff = ds_CMIP5_rcp45 - ds_CMIP5_hist
-
-diff.to_netcdf("../output/cmip5_diff_rcp45.nc")
+        # calculate and save difference
+        diff = ds_future - ds_ref
+        diff.to_netcdf(
+            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+        )
