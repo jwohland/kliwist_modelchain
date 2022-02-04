@@ -37,7 +37,7 @@ def get_dataset_dictionary(
             variable=variable_id,
             frequency=frequency,
             experiment=experiment_id,
-            ensemble_member="r1i1p1",  # todo this needs to be generalized. Chosen here to avoid duplicates
+            ensemble_member="r1i1p1",
         )
         if GCMs:  # filter for those GCMs that are of interest
             ds_dict = {}
@@ -60,7 +60,7 @@ def get_dataset_dictionary(
             frequency=frequency,
             CORDEX_domain=CORDEX_domain,
             experiment_id=experiment_id,
-            member="r1i1p1",  # todo this needs to be generalized. Chosen here to avoid duplicates
+            member="r1i1p1",
         )
         if per_RCM:
             import numpy as np
@@ -105,7 +105,7 @@ def preprocess_cordex_dataset(ds, identifier):
             )  # problem known for the mentioned model and irrelevant for this study because affects only historical runs
         return
 
-    # Remap those datasets that have x and y coordinates  #todo there must be a neater way
+    # Remap those datasets that have x and y coordinates
     if "x" in ds.keys():
         ds = preproc.remap_lambert_conformal(ds, domain="EUR-11")
         print(identifier + " does not use rotated coordinates and is remapped")
@@ -238,7 +238,6 @@ ds_CMIP5_hist = ds_CMIP5_hist.sel(year=slice(1985, 2005)).mean(dim="year")
 
 update_identifier(ds_CMIP5_hist)
 update_identifier(ds_CMIP5_rcp45)
-
 
 diff = ds_CMIP5_rcp45 - ds_CMIP5_hist
 
