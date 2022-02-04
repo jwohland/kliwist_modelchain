@@ -115,15 +115,22 @@ def plot_array_CMIP5(
     plt.subplots_adjust(0.05, 0.15, 0.95, 0.99)
 
 
-# CORDEX
-diff = xr.open_dataset("../output/cordex_diff_rcp45.nc")
-plot_array(diff)
-plt.savefig(
-    "../plots/cordex_windchange_rcp45.png", dpi=300, facecolor="w", transparent=False
-)
-
-# CMIP5
-
-diff = xr.open_dataset("../output/cmip5_diff_rcp45.nc")
-plot_array_CMIP5(diff)
-plt.savefig("../plots/cmip5_windchange_rcp45.png", dpi=300, facecolor="w", transparent=False)
+for experiment_id in ["rcp26", "rcp45", "rcp85"]:
+    # CORDEX
+    diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
+    plot_array(diff)
+    plt.savefig(
+        "../plots/cordex_windchange_" + experiment_id + ".png",
+        dpi=300,
+        facecolor="w",
+        transparent=False,
+    )
+    # CMIP5
+    diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
+    plot_array_CMIP5(diff)
+    plt.savefig(
+        "../plots/cmip5_windchange_" + experiment_id + ".png",
+        dpi=300,
+        facecolor="w",
+        transparent=False,
+    )
