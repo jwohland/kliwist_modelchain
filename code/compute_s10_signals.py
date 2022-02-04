@@ -240,7 +240,7 @@ for experiment_family in ["CORDEX", "CMIP5"]:
         ds_future = calculate_mean(
             experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
         )
-        ds_ref.to_netcdf(
+        ds_future.to_netcdf(
             "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
         )  # save mean future
         update_identifier(ds_future, experiment_id)
