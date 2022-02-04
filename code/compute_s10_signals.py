@@ -173,7 +173,7 @@ def dictionary_to_dataset(data_dict, experiment_family):
         import xesmf as xe
 
         for i in range(1, len(list_ds)):
-            regridder = xe.Regridder(list_ds[i], list_ds[0], "bilinear")
+            regridder = xe.Regridder(list_ds[i], list_ds[0], "bilinear", periodic=True)
             list_ds[i] = regridder(list_ds[i])
     return xr.concat(list_ds, dim="identifier")
 
