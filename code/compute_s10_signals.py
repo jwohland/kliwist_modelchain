@@ -93,6 +93,9 @@ def preprocess_cordex_dataset(ds, identifier):
     """
     from cordex import preprocessing as preproc
 
+    # one WRF downscaling introduces grid related problems, only for rcp85, so exclude for now #todo check if model relevant
+    if identifier == 'EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon':
+        return
     # set coordinates to standard values
     try:
         ds = preproc.replace_coords(
@@ -236,7 +239,7 @@ for experiment_family in ["CORDEX", "CMIP5"]:
         "../output/" + experiment_family.lower() + "_mean_historical.nc"
     )  # save mean historical
     update_identifier(ds_ref, "historical")
-    for experiment_id in ["rcp45"]:  # extend to ["rcp26", "rcp45", "rcp85"]
+    for experiment_id in ["rcp85", "rcp45", "rcp26"]:
         ds_future = calculate_mean(
             experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
         )
