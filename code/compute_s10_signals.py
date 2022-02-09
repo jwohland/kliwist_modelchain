@@ -97,6 +97,7 @@ def preprocess_cordex_dataset(ds, identifier):
     if identifier == 'EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon':
         return
     # set coordinates to standard values
+    # todo add preproc.rename_cordex ?
     try:
         ds = preproc.replace_coords(
             ds
