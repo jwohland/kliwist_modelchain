@@ -83,6 +83,25 @@ def get_dataset_dictionary(
     return ds_dict
 
 
+def remap_hadrem3(ds, CORDEX_domain="EUR-11", method="bilinear"):
+    """
+    Remaps MOHC-HadREM3-GA7-05 onto the normal rotated EUR-11 grid.
+    The model uses 413 instead of 412 rlats which are shifted by about
+    one half grid box
+    :param ds:
+    :param CORDEX_domain: name of the CORDEX domain, e.g., "EUR-11"
+    :param method: method for interpolation, default "bilinear"
+    :return:
+    """
+    from cordex import core as core
+    from cordex import preprocessing as preproc
+    import xesmf as xe
+    ds_cordex = core.domain.cordex_domain(CORDEX_domain)
+    regridder = xe.Regridder(ds, ds_cordex, method=method)
+    ds = regridder(ds)
+    return preproc.replace_coords(ds, "EUR-11")
+
+
 def preprocess_cordex_dataset(ds, identifier):
     """
 
@@ -97,16 +116,13 @@ def preprocess_cordex_dataset(ds, identifier):
     # running preproc.rename_cordex didn't solve the issue (all values E+33 afterwards for this particular simulation)
     if identifier == 'EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon':
         return
-    try:
+
+    if "MOHC-HadREM3-GA7-05" in identifier:
+        ds = remap_hadrem3(ds)
+    else:
         ds = preproc.replace_coords(
             ds
-        )  # fails of size of rlat/rlon dimension doesn't match
-    except ValueError:
-        if "MOHC-HadREM3-GA7-05.historical" not in identifier:
-            print(
-                "Unexpected mismatch in " + identifier
-            )  # problem known for the mentioned model and irrelevant for this study because affects only historical runs
-        return
+        )
 
     # Remap those datasets that have x and y coordinates
     if "x" in ds.keys():
