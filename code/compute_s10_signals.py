@@ -28,9 +28,9 @@ def get_dataset_dictionary(
     """
     link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster #todo generalize
     if experiment_family == "CMIP5":
-        catalogue = "mistral-cmip5.json"
+        catalogue = "dkrz_cmip5_disk_netcdf.json"
     elif experiment_family == "CORDEX":
-        catalogue = "mistral-cordex.json"
+        catalogue = "dkrz_cordex_disk_netcdf.json"
     cat = intake.open_esm_datastore(link_catalogue + catalogue)
     if experiment_family == "CMIP5":
         subset = cat.search(
@@ -251,7 +251,7 @@ for experiment_family in ["CORDEX", "CMIP5"]:
         experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs
     )
     ds_ref.to_netcdf(
-        "../output/" + experiment_family.lower() + "_mean_historical.nc"
+        "../output/" + experiment_family.lower() + "_mean_historical_dkrz.nc"
     )  # save mean historical
     update_identifier(ds_ref, "historical")
     for experiment_id in ["rcp85", "rcp45", "rcp26"]:
@@ -259,12 +259,12 @@ for experiment_family in ["CORDEX", "CMIP5"]:
             experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
         )
         ds_future.to_netcdf(
-            "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
+            "../output/" + experiment_family.lower() + "_mean_" + experiment_id + "_dkrz.nc"
         )  # save mean future
         update_identifier(ds_future, experiment_id)
 
         # calculate and save difference
         diff = ds_future - ds_ref
         diff.to_netcdf(
-            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + "_dkrz.nc"
         )
