@@ -93,11 +93,10 @@ def preprocess_cordex_dataset(ds, identifier):
     """
     from cordex import preprocessing as preproc
 
-    # one WRF downscaling introduces grid related problems, only for rcp85, so exclude for now #todo check if model relevant
+    # one WRF downscaling introduces grid related problems, only for rcp85, so is manually excluded here
+    # running preproc.rename_cordex didn't solve the issue (all values E+33 afterwards for this particular simulation)
     if identifier == 'EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon':
         return
-    # set coordinates to standard values
-    # todo add preproc.rename_cordex ?
     try:
         ds = preproc.replace_coords(
             ds
