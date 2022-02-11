@@ -118,16 +118,16 @@ def preprocess_cordex_dataset(ds, identifier):
     if identifier == "EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon":
         return
 
+    # fix HadREM3 grid (too large by 1 grid box)
     if "MOHC-HadREM3-GA7-05" in identifier:
         ds = remap_hadrem3(ds)
-    else:
-        ds = preproc.replace_coords(ds)
-
     # Remap those datasets that have x and y coordinates
-    if "x" in ds.keys():
+    elif "x" in ds.keys():
         ds = preproc.remap_lambert_conformal(ds, domain="EUR-11")
         print(identifier + " does not use rotated coordinates and is remapped")
-        ds = ds.drop_dims(["x", "y"])
+        ds = ds.drop_dims(["x", "y"], errors="ignore")
+    else:
+        ds = preproc.replace_coords(ds)
     ds = (
         ds.drop(
             [
