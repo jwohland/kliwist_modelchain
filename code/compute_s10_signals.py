@@ -1,7 +1,7 @@
 import intake
 from dask.distributed import Client
 import xarray as xr
-import numpy as np
+from cordex import preprocessing as preproc
 
 client = Client()  # start dask client
 
@@ -71,7 +71,8 @@ def get_dataset_dictionary(
                 try:
                     ds_dict.update(
                         subset.search(model_id=RCM).to_dataset_dict(
-                            cdf_kwargs={"use_cftime": True, "chunks": {}}
+                            preprocess=preproc.rename_cordex,
+                            cdf_kwargs={"use_cftime": True, "chunks": {}},
                         )
                     )
                 except:
@@ -94,8 +95,8 @@ def remap_hadrem3(ds, CORDEX_domain="EUR-11", method="bilinear"):
     :return:
     """
     from cordex import core as core
-    from cordex import preprocessing as preproc
     import xesmf as xe
+
     ds_cordex = core.domain.cordex_domain(CORDEX_domain)
     regridder = xe.Regridder(ds, ds_cordex, method=method)
     ds = regridder(ds)
@@ -114,15 +115,13 @@ def preprocess_cordex_dataset(ds, identifier):
 
     # one WRF downscaling introduces grid related problems, only for rcp85, so is manually excluded here
     # running preproc.rename_cordex didn't solve the issue (all values E+33 afterwards for this particular simulation)
-    if identifier == 'EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon':
+    if identifier == "EUR-11.MIROC-MIROC5.UHOH.UHOH-WRF361H.rcp85.mon":
         return
 
     if "MOHC-HadREM3-GA7-05" in identifier:
         ds = remap_hadrem3(ds)
     else:
-        ds = preproc.replace_coords(
-            ds
-        )
+        ds = preproc.replace_coords(ds)
 
     # Remap those datasets that have x and y coordinates
     if "x" in ds.keys():
