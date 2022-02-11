@@ -251,7 +251,7 @@ for experiment_family in ["CORDEX", "CMIP5"]:
         experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs
     )
     ds_ref.to_netcdf(
-        "../output/" + experiment_family.lower() + "_mean_historical_dkrz.nc"
+        "../output/" + experiment_family.lower() + "_mean_historical.nc"
     )  # save mean historical
     update_identifier(ds_ref, "historical")
     for experiment_id in ["rcp85", "rcp45", "rcp26"]:
@@ -259,12 +259,12 @@ for experiment_family in ["CORDEX", "CMIP5"]:
             experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
         )
         ds_future.to_netcdf(
-            "../output/" + experiment_family.lower() + "_mean_" + experiment_id + "_dkrz.nc"
+            "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
         )  # save mean future
         update_identifier(ds_future, experiment_id)
 
         # calculate and save difference
         diff = ds_future - ds_ref
         diff.to_netcdf(
-            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + "_dkrz.nc"
+            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
         )
