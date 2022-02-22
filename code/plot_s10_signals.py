@@ -80,7 +80,7 @@ def plot_array_CMIP5(
         figsize=(8, 2),
         dpi=300,
     )
-    cbar_ax = f.add_axes([0.2, 0.12, 0.6, 0.05])
+    cbar_ax = f.add_axes([0.2, 0.3, 0.6, 0.05])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
     for i, ident in enumerate(sorted(ds.identifier.values)):
@@ -112,7 +112,7 @@ def plot_array_CMIP5(
     for ax in axs.flatten():
         ax.add_feature(cf.COASTLINE)
         ax.add_feature(cf.BORDERS)
-    plt.subplots_adjust(0.05, 0.15, 0.95, 0.99)
+    plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
 
 
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
