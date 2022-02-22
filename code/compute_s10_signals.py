@@ -6,6 +6,44 @@ from cordex import preprocessing as preproc
 client = Client()  # start dask client
 
 
+def get_gcm_list(experiment_id):
+    """
+    return list of GCMs that were downscaled in EUROCORDEX-11 for a given experiment_id.
+
+    This list is manually determined (by evaluating all EU-11 simulations). Automization was difficult because naming
+    conventions seem to vary from GCM to GCM.
+
+    :param experiment_id: rcp26, rcp45, rcp85
+    :return:
+    """
+    assert experiment_id in ["rcp26", "rcp45", "rcp85", "all"]
+    gcm_list = [
+        "CNRM-CM5",
+        "EC-EARTH",
+        "IPSL-CM5A-MR",
+        "HadGEM2-ES",
+        "MPI-ESM-LR",
+        "NorESM1-M",
+    ]  # those models are included in all 3 rcps and the list is complete for rcp45
+    if experiment_id == "rcp26":
+        gcm_list.extend([
+            "MIROC5",
+            "GFDL-ESM2G",
+        ])
+    elif experiment_id == "rcp85":
+        gcm_list.extend([
+            "CanESM2",
+            "MIROC5",
+        ])
+    elif experiment_id == "all":  # full list of GCMs that were downscaled in at least 1 scenario
+        gcm_list.extend([
+            "MIROC5",
+            "GFDL-ESM2G",
+            "CanESM2",
+        ])
+    return gcm_list
+
+
 def get_dataset_dictionary(
     experiment_family,
     variable_id,
@@ -132,6 +170,7 @@ def preprocess_cordex_dataset(ds, identifier):
         ds.drop(
             [
                 "time_bnds",
+                "bnds",
                 "rotated_pole",
                 "bounds_lon",
                 "bounds_lat",
@@ -236,14 +275,7 @@ def calculate_mean(
 
 for experiment_family in ["CORDEX", "CMIP5"]:
     if experiment_family == "CMIP5":
-        GCMs = [
-            "CNRM-CM5",
-            "EC-EARTH",
-            "IPSL-CM5A-MR",
-            "HadGEM2-ES",
-            "MPI-ESM-LR",
-            "NorESM1-M",
-        ]
+        GCMs = get_gcm_list("all")
         per_RCM = False
     else:
         GCMs, per_RCM = None, True
@@ -255,6 +287,8 @@ for experiment_family in ["CORDEX", "CMIP5"]:
     )  # save mean historical
     update_identifier(ds_ref, "historical")
     for experiment_id in ["rcp85", "rcp45", "rcp26"]:
+        if experiment_family == "CMIP5":
+            GCMs = get_gcm_list(experiment_id)
         ds_future = calculate_mean(
             experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
         )

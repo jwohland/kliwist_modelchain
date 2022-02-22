@@ -74,7 +74,7 @@ def plot_array_CMIP5(
 ):  # todo currently copied from plot_array need cleaner plotting functions!
     # prepare plotting
     f, axs = plt.subplots(
-        ncols=5,
+        ncols=ds.identifier.size,
         nrows=1,
         subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
         figsize=(8, 2),
