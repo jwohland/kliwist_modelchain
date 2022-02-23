@@ -26,21 +26,29 @@ def get_gcm_list(experiment_id):
         "NorESM1-M",
     ]  # those models are included in all 3 rcps and the list is complete for rcp45
     if experiment_id == "rcp26":
-        gcm_list.extend([
-            "MIROC5",
-            "GFDL-ESM2G",
-        ])
+        gcm_list.extend(
+            [
+                "MIROC5",
+                "GFDL-ESM2G",
+            ]
+        )
     elif experiment_id == "rcp85":
-        gcm_list.extend([
-            "CanESM2",
-            "MIROC5",
-        ])
-    elif experiment_id == "all":  # full list of GCMs that were downscaled in at least 1 scenario
-        gcm_list.extend([
-            "MIROC5",
-            "GFDL-ESM2G",
-            "CanESM2",
-        ])
+        gcm_list.extend(
+            [
+                "CanESM2",
+                "MIROC5",
+            ]
+        )
+    elif (
+        experiment_id == "all"
+    ):  # full list of GCMs that were downscaled in at least 1 scenario
+        gcm_list.extend(
+            [
+                "MIROC5",
+                "GFDL-ESM2G",
+                "CanESM2",
+            ]
+        )
     return gcm_list
 
 
@@ -52,6 +60,7 @@ def get_dataset_dictionary(
     experiment_id,
     per_RCM=False,
     GCMs=None,
+    standard_ensemble_member="r1i1p1",
 ):
     """
     Check data availability and output dictionary of datasets
@@ -75,16 +84,18 @@ def get_dataset_dictionary(
             variable=variable_id,
             frequency=frequency,
             experiment=experiment_id,
-            ensemble_member="r1i1p1",
         )
         if GCMs:  # filter for those GCMs that are of interest
             ds_dict = {}
             for GCM in GCMs:
+                ensemble_member = standard_ensemble_member
+                if GCM == "EC-EARTH":
+                    ensemble_member = "r7i1p1"  # EC-Earth doesn't provide all scnearios in realization r1i1p1. Use r7i1p1 instead where all scenarios are provided.
                 try:
                     ds_dict.update(
-                        subset.search(model=GCM).to_dataset_dict(
-                            cdf_kwargs={"use_cftime": True, "chunks": {}}
-                        )
+                        subset.search(
+                            model=GCM, ensemble_member=ensemble_member
+                        ).to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
                     )
                 except:
                     print(GCM + " not found")
@@ -98,7 +109,7 @@ def get_dataset_dictionary(
             frequency=frequency,
             CORDEX_domain=CORDEX_domain,
             experiment_id=experiment_id,
-            member="r1i1p1",
+            member=standard_ensemble_member,
         )
         if per_RCM:
             import numpy as np
@@ -192,10 +203,14 @@ def preprocess_cordex_dataset(ds, identifier):
 
 def preprocess_cmip_dataset(ds, identifier):
     ds = (
-        ds.drop(["lat_bnds", "lon_bnds", "time_bnds"], errors="ignore")
+        ds.drop(["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore")
         .assign_coords({"identifier": identifier})
         .groupby("time.year")
         .mean("time")
+    )
+    ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
+    ds = ds.assign_attrs(
+        ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
     )
     return ds
 
