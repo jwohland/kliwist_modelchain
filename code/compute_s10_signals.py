@@ -85,12 +85,13 @@ def get_dataset_dictionary(
             frequency=frequency,
             experiment=experiment_id,
         )
+        subset.df.to_csv("../input/CMIP5_"+experiment_id+".csv")  # dump relevant parts of underlying catalogue
         if GCMs:  # filter for those GCMs that are of interest
             ds_dict = {}
             for GCM in GCMs:
                 ensemble_member = standard_ensemble_member
                 if GCM == "EC-EARTH":
-                    ensemble_member = "r7i1p1"  # EC-Earth doesn't provide all scnearios in realization r1i1p1. Use r7i1p1 instead where all scenarios are provided.
+                    ensemble_member = "r7i1p1"  # EC-Earth doesn't provide all scenarios in realization r1i1p1. Use r7i1p1 instead where all scenarios are provided.
                 try:
                     ds_dict.update(
                         subset.search(
@@ -111,6 +112,7 @@ def get_dataset_dictionary(
             experiment_id=experiment_id,
             member=standard_ensemble_member,
         )
+        subset.df.to_csv("../input/CORDEX_" + experiment_id + ".csv")  # dump relevant parts of underlying catalogue
         if per_RCM:
             import numpy as np
 
