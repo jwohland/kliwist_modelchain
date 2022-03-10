@@ -3,6 +3,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cf
 import xarray as xr
 from numpy import unique
+from pandas import MultiIndex
 
 
 def list_of_models(ds, model_type):
@@ -10,6 +11,14 @@ def list_of_models(ds, model_type):
     if model_type == "GCM":
         index = 1
     return sorted(list(unique([x.split(".")[index] for x in ds.identifier.values])))
+
+
+def reindex_per_model(ds):
+    tmp = diff.copy()
+    RCMs = [x.split(".")[-2] for x in ds.identifier.values]
+    GCMs = [x.split(".")[1] for x in ds.identifier.values]
+    new_index = MultiIndex.from_arrays([RCMs, GCMs], names=("RCMs", "GCMs"))
+    return tmp.assign(identifier=new_index).unstack("identifier")
 
 
 def plot_array(ds):
@@ -80,7 +89,9 @@ def plot_array_CMIP5(
         figsize=(8, 2),
         dpi=300,
     )
-    cbar_ax = f.add_axes([0.2, 0.3, 0.6, 0.05])
+    cbar_ax = f.add_axes(
+        [0.2, 0.3, 0.6, 0.05]
+    )  # maybe use inset_locator instead? https://stackoverflow.com/questions/13310594/positioning-the-colorbar
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
     for i, ident in enumerate(sorted(ds.identifier.values)):
@@ -115,6 +126,7 @@ def plot_array_CMIP5(
     plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
 
 
+### Individual plots of all models ###
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     # CORDEX
     diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
@@ -134,3 +146,75 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         facecolor="w",
         transparent=False,
     )
+
+
+### Aggregate plots ###
+# CORDEX
+ensemble_size = {"rcp26": 4, "rcp45": 5, "rcp85": 10}
+for experiment_id in ["rcp26", "rcp45", "rcp85"]:
+    diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
+    ds = reindex_per_model(diff)
+    for metric in ["mean", "standard_deviation"]:
+        label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
+        RCMs = unique(ds.RCMs)
+        f, axs = plt.subplots(
+            nrows=ensemble_size[experiment_id],
+            subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
+            figsize=(4, len(experiment_id) * 2),
+        )
+        plt.subplots_adjust(bottom=0.03, top=0.98)
+        cbar_ax = f.add_axes([0.1, 0.015, 0.8, 0.01])
+        i = 0
+        for RCM in RCMs:
+            N_models = (
+                len(ds.GCMs)
+                - ds.sel(RCMs=RCM)
+                .mean(dim=["rlat", "rlon"])["sfcWind"]
+                .isnull()
+                .values.sum()
+            )
+            if N_models > 1:
+                if metric == "mean":
+                    plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True)
+                    vmin, vmax = -0.5, 0.5
+                    cmap = plt.get_cmap("coolwarm")
+                elif metric == "standard_deviation":
+                    plot_data = ds.sel(RCMs=RCM).std(dim="GCMs", skipna=True)
+                    vmin, vmax = 0, 0.25
+                    cmap = plt.get_cmap("Greens")
+                plot_data["sfcWind"].plot(
+                    x="lon",
+                    y="lat",
+                    ax=axs[i],
+                    vmin=vmin,
+                    vmax=vmax,
+                    extend="both",
+                    cbar_ax=cbar_ax,
+                    cmap=cmap,
+                    cbar_kwargs={"label": label, "orientation": "horizontal"},
+                )  # todo add how many non-nan
+                axs[i].set_title(RCM + ", " + str(N_models), fontsize=8)
+                axs[i].add_feature(cf.COASTLINE)
+                axs[i].add_feature(cf.BORDERS)
+                i += 1
+                plt.savefig(
+                    "../plots/cordex_windchange_" + experiment_id + "_" + metric + ".png",
+                    dpi=300,
+                    facecolor="w",
+                    transparent=False,
+                )
+
+"""
+GCMs = unique(ds.GCMs)
+f, axs = plt.subplots(
+    ncols=len(GCMs),
+    nrows=2,
+    figsize=(10, 4),
+    subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
+)
+for i, GCM in enumerate(GCMs):
+    ds.sel(GCMs=GCM).mean(dim="RCMs", skipna=True)["sfcWind"].plot(
+        ax=axs[0, i]
+    )  # todo add how many non-nan
+    ds.sel(GCMs=GCM).std(dim="RCMs", skipna=True)["sfcWind"].plot(ax=axs[1, i])
+"""
