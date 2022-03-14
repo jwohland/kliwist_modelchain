@@ -126,6 +126,50 @@ def plot_array_CMIP5(
     plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
 
 
+def plot_aggregate(ds, metric, axs, i):
+    N_models = (
+        len(ds.GCMs)
+        - ds.sel(RCMs=RCM).mean(dim=["rlat", "rlon"])["sfcWind"].isnull().values.sum()
+    )
+    if N_models > 1:
+        if metric == "mean":
+            plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True)
+            vmin, vmax = -0.5, 0.5
+            cmap = plt.get_cmap("coolwarm")
+        elif metric == "standard_deviation":
+            plot_data = ds.sel(RCMs=RCM).std(dim="GCMs", skipna=True)
+            vmin, vmax = 0, 0.25
+            cmap = plt.get_cmap("Greens")
+        elif metric == "mean_per_std":
+            plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True) / ds.sel(
+                RCMs=RCM
+            ).std(dim="GCMs", skipna=True)
+            vmin, vmax = -2, 2
+            cmap = plt.get_cmap("coolwarm")
+        plot_data["sfcWind"].plot(
+            x="lon",
+            y="lat",
+            ax=axs[i],
+            vmin=vmin,
+            vmax=vmax,
+            extend="both",
+            cbar_ax=cbar_ax,
+            cmap=cmap,
+            cbar_kwargs={"label": label, "orientation": "horizontal"},
+        )  # todo add how many non-nan
+        axs[i].set_title(RCM + ", " + str(N_models), fontsize=8)
+        axs[i].add_feature(cf.COASTLINE)
+        axs[i].add_feature(cf.BORDERS)
+        i += 1
+        plt.savefig(
+            "../plots/cordex_windchange_" + experiment_id + "_" + metric + ".png",
+            dpi=300,
+            facecolor="w",
+            transparent=False,
+        )
+    return i
+
+
 ### Individual plots of all models ###
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     # CORDEX
@@ -147,16 +191,19 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         transparent=False,
     )
 
-
 ### Aggregate plots ###
 # CORDEX
-RCM_ensemble_size = {"rcp26": 4, "rcp45": 5, "rcp85": 10}  # number of RCMs with >1 downscaled GCM
+RCM_ensemble_size = {
+    "rcp26": 4,
+    "rcp45": 5,
+    "rcp85": 10,
+}  # number of RCMs with >1 downscaled GCM
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
     ds = reindex_per_model(diff)
     for metric in ["mean", "standard_deviation", "mean_per_std"]:
+        # prep figure
         label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
-        RCMs = unique(ds.RCMs)
         f, axs = plt.subplots(
             nrows=RCM_ensemble_size[experiment_id],
             subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
@@ -164,55 +211,12 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         )
         plt.subplots_adjust(bottom=0.03, top=0.98)
         cbar_ax = f.add_axes([0.1, 0.015, 0.8, 0.01])
-        i = 0
+        RCMs = unique(ds.RCMs)
+        i = 0  # can not use enumerate because sometimes loop is over insufficient data
         for RCM in RCMs:
-            N_models = (
-                len(ds.GCMs)
-                - ds.sel(RCMs=RCM)
-                .mean(dim=["rlat", "rlon"])["sfcWind"]
-                .isnull()
-                .values.sum()
-            )
-            if N_models > 1:
-                if metric == "mean":
-                    plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True)
-                    vmin, vmax = -0.5, 0.5
-                    cmap = plt.get_cmap("coolwarm")
-                elif metric == "standard_deviation":
-                    plot_data = ds.sel(RCMs=RCM).std(dim="GCMs", skipna=True)
-                    vmin, vmax = 0, 0.25
-                    cmap = plt.get_cmap("Greens")
-                elif metric == "mean_per_std":
-                    plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True) / ds.sel(
-                        RCMs=RCM
-                    ).std(dim="GCMs", skipna=True)
-                    vmin, vmax = -2, 2
-                    cmap = plt.get_cmap("coolwarm")
-                plot_data["sfcWind"].plot(
-                    x="lon",
-                    y="lat",
-                    ax=axs[i],
-                    vmin=vmin,
-                    vmax=vmax,
-                    extend="both",
-                    cbar_ax=cbar_ax,
-                    cmap=cmap,
-                    cbar_kwargs={"label": label, "orientation": "horizontal"},
-                )  # todo add how many non-nan
-                axs[i].set_title(RCM + ", " + str(N_models), fontsize=8)
-                axs[i].add_feature(cf.COASTLINE)
-                axs[i].add_feature(cf.BORDERS)
-                i += 1
-                plt.savefig(
-                    "../plots/cordex_windchange_"
-                    + experiment_id
-                    + "_"
-                    + metric
-                    + ".png",
-                    dpi=300,
-                    facecolor="w",
-                    transparent=False,
-                )
+            i = plot_aggregate(ds, metric, axs, i)
+
+
 
 """
 GCMs = unique(ds.GCMs)
