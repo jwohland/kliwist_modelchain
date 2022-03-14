@@ -150,15 +150,15 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
 
 ### Aggregate plots ###
 # CORDEX
-ensemble_size = {"rcp26": 4, "rcp45": 5, "rcp85": 10}
+RCM_ensemble_size = {"rcp26": 4, "rcp45": 5, "rcp85": 10}  # number of RCMs with >1 downscaled GCM
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
     ds = reindex_per_model(diff)
-    for metric in ["mean", "standard_deviation"]:
+    for metric in ["mean", "standard_deviation", "mean_per_std"]:
         label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
         RCMs = unique(ds.RCMs)
         f, axs = plt.subplots(
-            nrows=ensemble_size[experiment_id],
+            nrows=RCM_ensemble_size[experiment_id],
             subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
             figsize=(4, len(experiment_id) * 2),
         )
@@ -182,6 +182,12 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
                     plot_data = ds.sel(RCMs=RCM).std(dim="GCMs", skipna=True)
                     vmin, vmax = 0, 0.25
                     cmap = plt.get_cmap("Greens")
+                elif metric == "mean_per_std":
+                    plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True) / ds.sel(
+                        RCMs=RCM
+                    ).std(dim="GCMs", skipna=True)
+                    vmin, vmax = -2, 2
+                    cmap = plt.get_cmap("coolwarm")
                 plot_data["sfcWind"].plot(
                     x="lon",
                     y="lat",
@@ -198,7 +204,11 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
                 axs[i].add_feature(cf.BORDERS)
                 i += 1
                 plt.savefig(
-                    "../plots/cordex_windchange_" + experiment_id + "_" + metric + ".png",
+                    "../plots/cordex_windchange_"
+                    + experiment_id
+                    + "_"
+                    + metric
+                    + ".png",
                     dpi=300,
                     facecolor="w",
                     transparent=False,
