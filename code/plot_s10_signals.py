@@ -292,3 +292,69 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
             i = 0  # can not use enumerate because sometimes loop is over insufficient data
             for model in models_of_interest:
                 i = plot_aggregate(ds, model, metric, axs, i, aggregate_dimension)
+
+# CMIP5
+for experiment_id in ["rcp26", "rcp45", "rcp85"]:
+    # CMIP5
+    diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
+    f, axs = plt.subplots(
+        ncols=3,
+        subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
+        figsize=(12, 4),
+        dpi=300,
+    )
+    diff.mean(dim="identifier")["sfcWind"].plot(
+        ax=axs[0],
+        vmin=-0.5,
+        vmax=0.5,
+        cmap=plt.get_cmap("coolwarm"),
+        extend="both",
+        cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
+    )
+    diff.mean(dim="identifier")["sfcWind"].plot(
+        ax=axs[0],
+        levels=[-10, -0.1, 0.1, 10],
+        colors=["none", "white", "none"],
+        add_colorbar=False,
+    )
+    diff.std(dim="identifier")["sfcWind"].plot(
+        ax=axs[1],
+        vmin=0,
+        vmax=0.25,
+        cmap=plt.get_cmap("Greens"),
+        extend="both",
+        cbar_kwargs={
+            "label": "Standard deviation of wind speed change [m/s]",
+            "orientation": "horizontal",
+        },
+    )
+    (diff.mean(dim="identifier") / diff.std(dim="identifier"))["sfcWind"].plot(
+        ax=axs[2],
+        vmin=-2,
+        vmax=2,
+        extend="both",
+        cmap=plt.get_cmap("coolwarm"),
+        cbar_kwargs={
+            "label": "Mean wind change / standard deviation [1]",
+            "orientation": "horizontal",
+        },
+    )
+    for i, title in enumerate(["Mean", "Standard Deviation", "Signal to Noise"]):
+        axs[i].set_title(title)
+        axs[i].add_feature(cf.COASTLINE)
+        axs[i].add_feature(cf.BORDERS)
+    axs[0].text(
+        -0.1,
+        1.1,
+        experiment_id,
+        horizontalalignment="left",
+        verticalalignment="center",
+        transform=axs[0].transAxes,
+        weight="bold",
+    )
+    plt.savefig(
+        "../plots/aggregate/cmip5_windchange_" + experiment_id + "_mean.png",
+        dpi=300,
+        facecolor="w",
+        transparent=False,
+    )
