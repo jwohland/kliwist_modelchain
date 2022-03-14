@@ -126,26 +126,62 @@ def plot_array_CMIP5(
     plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
 
 
-def plot_aggregate(ds, metric, axs, i):
-    N_models = (
-        len(ds.GCMs)
-        - ds.sel(RCMs=RCM).mean(dim=["rlat", "rlon"])["sfcWind"].isnull().values.sum()
-    )
+def plot_aggregate(ds, model, metric, axs, i, aggregate_dimension):
+    """
+    Plot aggregate information by evaluating all RCMs/GCMs available for a specific GCM/RCM in terms of
+    - mean change
+    - standard deviation of mean change accross the ensemble
+    - mean change divided by standard deviation as indicator of signal to noise ratio  # todo think about 1/N scaling or so
+    :param ds:
+    :param model:
+    :param metric:
+    :param axs:
+    :param i:
+    :param aggregate_dimension:
+    :return:
+    """
+    # todo there must be a nicer way of doing this with fewer if and elifs
+    if aggregate_dimension == "RCM":
+        N_models = (
+            len(ds.GCMs)
+            - ds.sel(RCMs=model)
+            .mean(dim=["rlat", "rlon"])["sfcWind"]
+            .isnull()
+            .values.sum()
+        )
+    elif aggregate_dimension == "GCM":
+        N_models = (
+            len(ds.RCMs)
+            - ds.sel(GCMs=model)
+            .mean(dim=["rlat", "rlon"])["sfcWind"]
+            .isnull()
+            .values.sum()
+        )
     if N_models > 1:
+        cmap = plt.get_cmap("coolwarm")
         if metric == "mean":
-            plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True)
+            if aggregate_dimension == "RCM":
+                plot_data = ds.sel(RCMs=model).mean(dim="GCMs", skipna=True)
+            elif aggregate_dimension == "GCM":
+                plot_data = ds.sel(GCMs=model).mean(dim="RCMs", skipna=True)
             vmin, vmax = -0.5, 0.5
-            cmap = plt.get_cmap("coolwarm")
         elif metric == "standard_deviation":
-            plot_data = ds.sel(RCMs=RCM).std(dim="GCMs", skipna=True)
+            if aggregate_dimension == "RCM":
+                plot_data = ds.sel(RCMs=model).std(dim="GCMs", skipna=True)
+            elif aggregate_dimension == "GCM":
+                plot_data = ds.sel(GCMs=model).std(dim="RCMs", skipna=True)
             vmin, vmax = 0, 0.25
             cmap = plt.get_cmap("Greens")
         elif metric == "mean_per_std":
-            plot_data = ds.sel(RCMs=RCM).mean(dim="GCMs", skipna=True) / ds.sel(
-                RCMs=RCM
-            ).std(dim="GCMs", skipna=True)
+            if aggregate_dimension == "RCM":
+                plot_data = ds.sel(RCMs=model).mean(dim="GCMs", skipna=True) / ds.sel(
+                    RCMs=model
+                ).std(dim="GCMs", skipna=True)
+            elif aggregate_dimension == "GCM":
+                plot_data = ds.sel(GCMs=model).mean(dim="RCMs", skipna=True) / ds.sel(
+                    GCMs=model
+                ).std(dim="RCMs", skipna=True)
             vmin, vmax = -2, 2
-            cmap = plt.get_cmap("coolwarm")
         plot_data["sfcWind"].plot(
             x="lon",
             y="lat",
@@ -156,13 +192,29 @@ def plot_aggregate(ds, metric, axs, i):
             cbar_ax=cbar_ax,
             cmap=cmap,
             cbar_kwargs={"label": label, "orientation": "horizontal"},
-        )  # todo add how many non-nan
-        axs[i].set_title(RCM + ", " + str(N_models), fontsize=8)
+        )
+        if metric == "mean":
+            # add hatching  # todo maybe make hatching differently, e.g., by masking out areas with low signal to noise ratio
+            plot_data["sfcWind"].plot(
+                ax=axs[i],
+                x="lon",
+                y="lat",
+                levels=[-10, -0.1, 0.1, 10],
+                colors=["none", "white", "none"],
+                add_colorbar=False,
+            )
+        axs[i].set_title(model + ", " + str(N_models), fontsize=8)
         axs[i].add_feature(cf.COASTLINE)
         axs[i].add_feature(cf.BORDERS)
         i += 1
         plt.savefig(
-            "../plots/cordex_windchange_" + experiment_id + "_" + metric + ".png",
+            "../plots/aggregate/cordex_windchange_"
+            + experiment_id
+            + "_"
+            + metric
+            + "_aggdim_"
+            + aggregate_dimension
+            + ".png",
             dpi=300,
             facecolor="w",
             transparent=False,
@@ -193,42 +245,50 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
 
 ### Aggregate plots ###
 # CORDEX
-RCM_ensemble_size = {
-    "rcp26": 4,
-    "rcp45": 5,
-    "rcp85": 10,
-}  # number of RCMs with >1 downscaled GCM
+ensemble_size = {
+    "RCM": {
+        "rcp26": 4,
+        "rcp45": 5,
+        "rcp85": 10,
+    },  # number of RCMs with >1 downscaled GCM
+    "GCM": {
+        "rcp26": 5,
+        "rcp45": 5,
+        "rcp85": 8,
+    },  # number of GCM with >1 downscaling RCM
+}
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
     ds = reindex_per_model(diff)
-    for metric in ["mean", "standard_deviation", "mean_per_std"]:
-        # prep figure
-        label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
-        f, axs = plt.subplots(
-            nrows=RCM_ensemble_size[experiment_id],
-            subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
-            figsize=(4, len(experiment_id) * 2),
-        )
-        plt.subplots_adjust(bottom=0.03, top=0.98)
-        cbar_ax = f.add_axes([0.1, 0.015, 0.8, 0.01])
-        RCMs = unique(ds.RCMs)
-        i = 0  # can not use enumerate because sometimes loop is over insufficient data
-        for RCM in RCMs:
-            i = plot_aggregate(ds, metric, axs, i)
-
-
-
-"""
-GCMs = unique(ds.GCMs)
-f, axs = plt.subplots(
-    ncols=len(GCMs),
-    nrows=2,
-    figsize=(10, 4),
-    subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
-)
-for i, GCM in enumerate(GCMs):
-    ds.sel(GCMs=GCM).mean(dim="RCMs", skipna=True)["sfcWind"].plot(
-        ax=axs[0, i]
-    )  # todo add how many non-nan
-    ds.sel(GCMs=GCM).std(dim="RCMs", skipna=True)["sfcWind"].plot(ax=axs[1, i])
-"""
+    for aggregate_dimension in ["RCM", "GCM"]:
+        if aggregate_dimension == "RCM":  # RCMs per row as in matrix plot
+            nrows, ncols = ensemble_size[aggregate_dimension][experiment_id], 1
+            figsize = (4, len(experiment_id) * 2)
+            subplot_params = {"bottom": 0.08, "top": 0.98}
+            cbar_params = [0.1, 0.05, 0.8, 0.01]
+        elif aggregate_dimension == "GCM":  # GCMs per column
+            nrows, ncols = 1, ensemble_size[aggregate_dimension][experiment_id]
+            figsize = (len(experiment_id) * 4, 3.5)
+            subplot_params = {"bottom": 0.2, "top": 0.98, "right": 0.96, "left": 0.04}
+            cbar_params = [0.1, 0.15, 0.8, 0.04]
+        for metric in ["mean", "standard_deviation", "mean_per_std"]:
+            # prep figure
+            label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
+            f, axs = plt.subplots(
+                nrows=nrows,
+                ncols=ncols,
+                subplot_kw={
+                    "projection": ccrs.PlateCarree(),
+                    "extent": [-15, 50, 35, 70],
+                },
+                figsize=figsize,
+            )
+            plt.subplots_adjust(**subplot_params)
+            cbar_ax = f.add_axes(cbar_params)
+            if aggregate_dimension == "RCM":
+                models_of_interest = unique(ds.RCMs)
+            elif aggregate_dimension == "GCM":
+                models_of_interest = unique(ds.GCMs)
+            i = 0  # can not use enumerate because sometimes loop is over insufficient data
+            for model in models_of_interest:
+                i = plot_aggregate(ds, model, metric, axs, i, aggregate_dimension)
