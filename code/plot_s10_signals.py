@@ -12,6 +12,20 @@ FIG_PARAMS = {
     "transparent": False,
 }
 
+SUBPLOT_KW = {
+    "subplot_kw": {"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]}
+}
+
+TEXT_PARAMS = {
+    "horizontalalignment": "left",
+    "verticalalignment": "center",
+}
+
+
+def add_coast_boarders(ax):
+    ax.add_feature(cf.COASTLINE)
+    ax.add_feature(cf.BORDERS)
+
 
 def list_of_models(ds, model_type):
     index = -2
@@ -32,11 +46,7 @@ def plot_array(ds):
     # prepare plotting
     RCMs, GCMs = list_of_models(ds, "RCM"), list_of_models(ds, "GCM")
     f, axs = plt.subplots(
-        ncols=len(GCMs),
-        nrows=len(RCMs),
-        subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
-        figsize=(10, 8),
-        dpi=300,
+        ncols=len(GCMs), nrows=len(RCMs), figsize=(10, 8), **SUBPLOT_KW
     )
     cbar_ax = f.add_axes([0.2, 0.05, 0.6, 0.01])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
@@ -65,8 +75,7 @@ def plot_array(ds):
             colors=["none", "white", "none"],
             add_colorbar=False,
         )
-        ax.add_feature(cf.COASTLINE)
-        ax.add_feature(cf.BORDERS)
+        add_coast_boarders(ax)
         ax.set_extent([-15, 50, 35, 70])
         ax.set_title("")
     for i, GCM in enumerate(GCMs):  # add GCM name as column headings
@@ -78,9 +87,8 @@ def plot_array(ds):
             RCM,
             rotation="vertical",
             fontsize=5,
-            horizontalalignment="center",
-            verticalalignment="center",
             transform=axs[j, 0].transAxes,
+            **TEXT_PARAMS
         )
     plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
 
@@ -90,11 +98,7 @@ def plot_array_CMIP5(
 ):  # todo currently copied from plot_array need cleaner plotting functions!
     # prepare plotting
     f, axs = plt.subplots(
-        ncols=ds.identifier.size,
-        nrows=1,
-        subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
-        figsize=(8, 2),
-        dpi=300,
+        ncols=ds.identifier.size, nrows=1, figsize=(8, 2), **SUBPLOT_KW
     )
     cbar_ax = f.add_axes(
         [0.2, 0.3, 0.6, 0.05]
@@ -128,8 +132,7 @@ def plot_array_CMIP5(
         axs.flatten()[i].set_title(GCM, fontsize=6)
 
     for ax in axs.flatten():
-        ax.add_feature(cf.COASTLINE)
-        ax.add_feature(cf.BORDERS)
+        add_coast_boarders(ax)
     plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
 
 
@@ -211,8 +214,7 @@ def plot_aggregate(ds, model, metric, axs, i, aggregate_dimension):
                 add_colorbar=False,
             )
         axs[i].set_title(model + ", " + str(N_models), fontsize=8)
-        axs[i].add_feature(cf.COASTLINE)
-        axs[i].add_feature(cf.BORDERS)
+        add_coast_boarders(axs[i])
         i += 1
         plt.savefig(
             "../plots/aggregate/cordex_windchange_"
@@ -270,13 +272,7 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
             # prep figure
             label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
             f, axs = plt.subplots(
-                nrows=nrows,
-                ncols=ncols,
-                subplot_kw={
-                    "projection": ccrs.PlateCarree(),
-                    "extent": [-15, 50, 35, 70],
-                },
-                figsize=figsize,
+                nrows=nrows, ncols=ncols, figsize=figsize, **SUBPLOT_KW
             )
             plt.subplots_adjust(**subplot_params)
             cbar_ax = f.add_axes(cbar_params)
@@ -292,12 +288,7 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
 for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     # CMIP5
     diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
-    f, axs = plt.subplots(
-        ncols=3,
-        subplot_kw={"projection": ccrs.PlateCarree(), "extent": [-15, 50, 35, 70]},
-        figsize=(12, 4),
-        dpi=300,
-    )
+    f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
     diff.mean(dim="identifier")["sfcWind"].plot(
         ax=axs[0],
         vmin=-0.5,
@@ -336,16 +327,14 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     )
     for i, title in enumerate(["Mean", "Standard Deviation", "Signal to Noise"]):
         axs[i].set_title(title)
-        axs[i].add_feature(cf.COASTLINE)
-        axs[i].add_feature(cf.BORDERS)
+        add_coast_boarders(axs[i])
     axs[0].text(
         -0.1,
         1.1,
         experiment_id,
-        horizontalalignment="left",
-        verticalalignment="center",
         transform=axs[0].transAxes,
         weight="bold",
+        **TEXT_PARAMS
     )
     plt.savefig(
         "../plots/aggregate/cmip5_windchange_" + experiment_id + "_mean.png",
