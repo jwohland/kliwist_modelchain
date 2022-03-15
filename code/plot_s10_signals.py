@@ -6,6 +6,13 @@ from numpy import unique
 from pandas import MultiIndex
 
 
+FIG_PARAMS = {
+    "dpi": 300,
+    "facecolor": "w",
+    "transparent": False,
+}
+
+
 def list_of_models(ds, model_type):
     index = -2
     if model_type == "GCM":
@@ -91,7 +98,7 @@ def plot_array_CMIP5(
     )
     cbar_ax = f.add_axes(
         [0.2, 0.3, 0.6, 0.05]
-    )  # maybe use inset_locator instead? https://stackoverflow.com/questions/13310594/positioning-the-colorbar
+    )  # todo maybe use inset_locator instead? https://stackoverflow.com/questions/13310594/positioning-the-colorbar
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
     for i, ident in enumerate(sorted(ds.identifier.values)):
@@ -215,9 +222,7 @@ def plot_aggregate(ds, model, metric, axs, i, aggregate_dimension):
             + "_aggdim_"
             + aggregate_dimension
             + ".png",
-            dpi=300,
-            facecolor="w",
-            transparent=False,
+            **FIG_PARAMS
         )
     return i
 
@@ -227,21 +232,11 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     # CORDEX
     diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
     plot_array(diff)
-    plt.savefig(
-        "../plots/cordex_windchange_" + experiment_id + ".png",
-        dpi=300,
-        facecolor="w",
-        transparent=False,
-    )
+    plt.savefig("../plots/cordex_windchange_" + experiment_id + ".png", **FIG_PARAMS)
     # CMIP5
     diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
     plot_array_CMIP5(diff)
-    plt.savefig(
-        "../plots/cmip5_windchange_" + experiment_id + ".png",
-        dpi=300,
-        facecolor="w",
-        transparent=False,
-    )
+    plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
 
 ### Aggregate plots ###
 # CORDEX
@@ -354,7 +349,5 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
     )
     plt.savefig(
         "../plots/aggregate/cmip5_windchange_" + experiment_id + "_mean.png",
-        dpi=300,
-        facecolor="w",
-        transparent=False,
+        **FIG_PARAMS
     )
