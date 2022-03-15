@@ -22,6 +22,26 @@ TEXT_PARAMS = {
 }
 
 
+def add_hatching(ax, da, levels=[-10, -0.1, 0.1, 10], hatch="....", **kwargs):
+    """
+    Hatch out areas between levels[1] and levels[2]
+    :param ax:
+    :param da:
+    :param levels:
+    :param hatch:
+    :return:
+    """
+    da = da.squeeze()
+    da.plot.contourf(
+        ax=ax,
+        levels=levels,
+        colors="none",
+        hatches=[None, hatch, None],
+        add_colorbar=False,
+        **kwargs
+    )
+
+
 def add_coast_boarders(ax):
     ax.add_feature(cf.COASTLINE)
     ax.add_feature(cf.BORDERS)
@@ -66,14 +86,12 @@ def plot_array(ds):
             cmap=plt.get_cmap("coolwarm"),
             cbar_kwargs={"label": label, "orientation": "horizontal"},
         )
-        # add hatching
-        ds["sfcWind"].sel(identifier=ident).plot(
-            ax=ax,
+        add_hatching(
+            ax,
+            ds["sfcWind"].sel(identifier=ident),
+            hatch=".....",
             x="lon",
             y="lat",
-            levels=[-10, -0.1, 0.1, 10],
-            colors=["none", "white", "none"],
-            add_colorbar=False,
         )
         add_coast_boarders(ax)
         ax.set_extent([-15, 50, 35, 70])
@@ -98,7 +116,7 @@ def plot_array_CMIP5(
 ):  # todo currently copied from plot_array need cleaner plotting functions!
     # prepare plotting
     f, axs = plt.subplots(
-        ncols=ds.identifier.size, nrows=1, figsize=(8, 2), **SUBPLOT_KW
+        ncols=ds.identifier.size, nrows=1, figsize=(12, 3), **SUBPLOT_KW
     )
     cbar_ax = f.add_axes(
         [0.2, 0.3, 0.6, 0.05]
@@ -119,16 +137,12 @@ def plot_array_CMIP5(
             cmap=plt.get_cmap("coolwarm"),
             cbar_kwargs={"label": label, "orientation": "horizontal"},
         )
-        # add hatching
-        ds["sfcWind"].sel(identifier=ident).plot(
-            ax=axs.flatten()[i],
+        add_hatching(
+            axs.flatten()[i],
+            ds["sfcWind"].sel(identifier=ident),
             x="lon",
             y="lat",
-            levels=[-10, -0.1, 0.1, 10],
-            colors=["none", "white", "none"],
-            add_colorbar=False,
         )
-
         axs.flatten()[i].set_title(GCM, fontsize=6)
 
     for ax in axs.flatten():
@@ -204,14 +218,12 @@ def plot_aggregate(ds, model, metric, axs, i, aggregate_dimension):
             cbar_kwargs={"label": label, "orientation": "horizontal"},
         )
         if metric == "mean":
-            # add hatching  # todo maybe make hatching differently, e.g., by masking out areas with low signal to noise ratio
-            plot_data["sfcWind"].plot(
-                ax=axs[i],
+            # todo maybe make hatching differently, e.g., by masking out areas with low signal to noise ratio
+            add_hatching(
+                axs[i],
+                plot_data["sfcWind"],
                 x="lon",
                 y="lat",
-                levels=[-10, -0.1, 0.1, 10],
-                colors=["none", "white", "none"],
-                add_colorbar=False,
             )
         axs[i].set_title(model + ", " + str(N_models), fontsize=8)
         add_coast_boarders(axs[i])
@@ -297,12 +309,7 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         extend="both",
         cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
     )
-    diff.mean(dim="identifier")["sfcWind"].plot(
-        ax=axs[0],
-        levels=[-10, -0.1, 0.1, 10],
-        colors=["none", "white", "none"],
-        add_colorbar=False,
-    )
+    add_hatching(axs[0], diff.mean(dim="identifier")["sfcWind"])
     diff.std(dim="identifier")["sfcWind"].plot(
         ax=axs[1],
         vmin=0,
