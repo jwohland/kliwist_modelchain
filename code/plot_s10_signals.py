@@ -21,6 +21,15 @@ TEXT_PARAMS = {
     "verticalalignment": "center",
 }
 
+MEAN_PLOT_PARAMS = {
+    "x": "lon",
+    "y": "lat",
+    "vmin": -0.8,
+    "vmax": 0.8,
+    "extend": "both",
+    "cmap": plt.get_cmap("coolwarm"),
+}
+
 
 def add_hatching(ax, da, levels=[-10, -0.1, 0.1, 10], hatch="....", **kwargs):
     """
@@ -63,80 +72,92 @@ def reindex_per_model(ds):
 
 
 def plot_array(ds):
+    """
+    Plot array of change signals in Eurocordex ensemble where each column represents one GCM and each row is one RCM.
+    :param ds: xr.Dataset
+    :return:
+    """
     # prepare plotting
     RCMs, GCMs = list_of_models(ds, "RCM"), list_of_models(ds, "GCM")
     f, axs = plt.subplots(
-        ncols=len(GCMs), nrows=len(RCMs), figsize=(10, 8), **SUBPLOT_KW
+        ncols=len(GCMs),
+        nrows=len(RCMs),
+        figsize=(len(RCMs) + 1, len(GCMs) * 1.5),
+        **SUBPLOT_KW
     )
-    cbar_ax = f.add_axes([0.2, 0.05, 0.6, 0.01])
+    plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
+    cbar_ax = f.add_axes([0.2, 0.06, 0.6, 0.01])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
-    for ident in sorted(ds.identifier.values):
+    for i_ident, ident in enumerate(sorted(ds.identifier.values)):
         GCM, RCM = ident.split(".")[1], ident.split(".")[-2]
-        ax = axs[RCMs.index(RCM), GCMs.index(GCM)]
-        # plot values
-        ds["sfcWind"].sel(identifier=ident).plot(
-            ax=ax,
-            x="lon",
-            y="lat",
-            cbar_ax=cbar_ax,
-            vmin=-0.8,
-            vmax=0.8,
-            extend="both",
-            cmap=plt.get_cmap("coolwarm"),
-            cbar_kwargs={"label": label, "orientation": "horizontal"},
-        )
-        add_hatching(
-            ax,
-            ds["sfcWind"].sel(identifier=ident),
-            hatch=".....",
-            x="lon",
-            y="lat",
-        )
-        add_coast_boarders(ax)
-        ax.set_extent([-15, 50, 35, 70])
-        ax.set_title("")
+        if (
+            ident == 'EUR-11.CNRM-CERFACS-CNRM-CM5.ICTP.ICTP-RegCM4-6.mon'
+            and ds["sfcWind"].sel(identifier=ident).isnull().all()
+        ):
+            print(ident + " is ignored because nan everywhere")
+        else:
+            ax = axs[RCMs.index(RCM), GCMs.index(GCM)]
+            if i_ident == 0:  # plot with colorbar once
+                ds["sfcWind"].sel(identifier=ident).plot(
+                    ax=ax,
+                    cbar_ax=cbar_ax,
+                    cbar_kwargs={"label": label, "orientation": "horizontal"},
+                    **MEAN_PLOT_PARAMS
+                )
+            else:
+                ds["sfcWind"].sel(identifier=ident).plot(
+                    ax=ax, add_colorbar=False, **MEAN_PLOT_PARAMS
+                )
+            add_hatching(
+                ax,
+                ds["sfcWind"].sel(identifier=ident),
+                hatch=".....",
+                x="lon",
+                y="lat",
+            )
+            add_coast_boarders(ax)
+            ax.set_title("")
     for i, GCM in enumerate(GCMs):  # add GCM name as column headings
         axs[0, i].set_title(GCM, fontsize=6)
     for j, RCM in enumerate(RCMs):  # add RCM name as row y axis
         axs[j, 0].text(
             -0.1,
             0.5,
-            RCM,
+            "-".join(RCM.split("-")[1:]),
             rotation="vertical",
             fontsize=5,
             transform=axs[j, 0].transAxes,
             **TEXT_PARAMS
         )
-    plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
 
 
-def plot_array_CMIP5(
-    ds,
-):  # todo currently copied from plot_array need cleaner plotting functions!
+def plot_array_CMIP5(ds):
+    """
+    Plot array of CMIP5 change signals per model (in different columns) as provided in ds
+    :param ds: xr.Dataset
+    :return:
+    """
+    # todo: Can plot_array and plot_array_CMIP5 be combined?
     # prepare plotting
-    f, axs = plt.subplots(
-        ncols=ds.identifier.size, nrows=1, figsize=(12, 3), **SUBPLOT_KW
-    )
-    cbar_ax = f.add_axes(
-        [0.2, 0.3, 0.6, 0.05]
-    )  # todo maybe use inset_locator instead? https://stackoverflow.com/questions/13310594/positioning-the-colorbar
+    f, axs = plt.subplots(ncols=ds.identifier.size, figsize=(11, 3), **SUBPLOT_KW)
+    cbar_ax = f.add_axes([0.2, 0.3, 0.6, 0.05])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
 
     for i, ident in enumerate(sorted(ds.identifier.values)):
         GCM = ident.split(".")[1]
         # plot values
-        ds["sfcWind"].sel(identifier=ident).plot(
-            ax=axs.flatten()[i],
-            x="lon",
-            y="lat",
-            cbar_ax=cbar_ax,
-            vmin=-0.8,
-            vmax=0.8,
-            extend="both",
-            cmap=plt.get_cmap("coolwarm"),
-            cbar_kwargs={"label": label, "orientation": "horizontal"},
-        )
+        if i == 0:  # once with colorbar
+            ds["sfcWind"].sel(identifier=ident).plot(
+                ax=axs.flatten()[i],
+                cbar_ax=cbar_ax,
+                cbar_kwargs={"label": label, "orientation": "horizontal"},
+                **MEAN_PLOT_PARAMS
+            )
+        else:
+            ds["sfcWind"].sel(identifier=ident).plot(
+                ax=axs.flatten()[i], add_colorbar=False, **MEAN_PLOT_PARAMS
+            )
         add_hatching(
             axs.flatten()[i],
             ds["sfcWind"].sel(identifier=ident),
@@ -144,9 +165,7 @@ def plot_array_CMIP5(
             y="lat",
         )
         axs.flatten()[i].set_title(GCM, fontsize=6)
-
-    for ax in axs.flatten():
-        add_coast_boarders(ax)
+        add_coast_boarders(axs.flatten()[i])
     plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
 
 
