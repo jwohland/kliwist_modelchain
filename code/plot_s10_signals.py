@@ -4,7 +4,7 @@ import cartopy.feature as cf
 import xarray as xr
 from numpy import unique
 from pandas import MultiIndex
-
+import xesmf as xe
 
 FIG_PARAMS = {
     "dpi": 300,
@@ -92,7 +92,7 @@ def plot_array(ds):
     for i_ident, ident in enumerate(sorted(ds.identifier.values)):
         GCM, RCM = ident.split(".")[1], ident.split(".")[-2]
         if (
-            ident == 'EUR-11.CNRM-CERFACS-CNRM-CM5.ICTP.ICTP-RegCM4-6.mon'
+            ident == "EUR-11.CNRM-CERFACS-CNRM-CM5.ICTP.ICTP-RegCM4-6.mon"
             and ds["sfcWind"].sel(identifier=ident).isnull().all()
         ):
             print(ident + " is ignored because nan everywhere")
@@ -328,7 +328,10 @@ for experiment_family in ["CORDEX", "CMIP5"]:
             vmin=-0.5,
             vmax=0.5,
             cmap=plt.get_cmap("coolwarm"),
-            cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
+            cbar_kwargs={
+                "label": "Wind speed change [m/s]",
+                "orientation": "horizontal",
+            },
             **plot_params
         )
         add_hatching(axs[0], diff.mean(dim="identifier")["sfcWind"], x="lon", y="lat")
@@ -366,6 +369,37 @@ for experiment_family in ["CORDEX", "CMIP5"]:
             **TEXT_PARAMS
         )
         plt.savefig(
-            "../plots/aggregate/" + experiment_family.lower() + "_windchange_" + experiment_id + "_mean.png",
+            "../plots/aggregate/"
+            + experiment_family.lower()
+            + "_windchange_"
+            + experiment_id
+            + "_mean.png",
             **FIG_PARAMS
         )
+
+
+# CORDEX vs. CMIP5 changes
+f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
+for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
+    # open data
+    diff_cordex = xr.open_dataset(
+        "../output/cordex_diff_" + experiment_id + ".nc"
+    ).mean(dim="identifier")
+    diff_cmip5 = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc").mean(
+        dim="identifier"
+    )
+    # regrid CORDEX to CMIP5 grid
+    regridder = xe.Regridder(diff_cordex, diff_cmip5, "bilinear", periodic=True)
+    diff_cordex = regridder(diff_cordex).squeeze()
+    # plot
+    plot_params = {"x": "lon", "y": "lat", "extend": "both"}
+    (diff_cordex - diff_cmip5)["sfcWind"].plot(
+        ax=axs[i],
+        levels=[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3],
+        cmap=plt.get_cmap("coolwarm"),
+        cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
+        **plot_params
+    )
+    #add_hatching(axs[i], (diff_cordex - diff_cmip5)["sfcWind"], x="lon", y="lat")
+    axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
+    add_coast_boarders(axs[i])
