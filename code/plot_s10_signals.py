@@ -315,54 +315,57 @@ for experiment_id in ["rcp26", "rcp45", "rcp85"]:
             for model in models_of_interest:
                 i = plot_aggregate(ds, model, metric, axs, i, aggregate_dimension)
 
-# CMIP5
-for experiment_id in ["rcp26", "rcp45", "rcp85"]:
-    # CMIP5
-    diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
-    f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
-    diff.mean(dim="identifier")["sfcWind"].plot(
-        ax=axs[0],
-        vmin=-0.5,
-        vmax=0.5,
-        cmap=plt.get_cmap("coolwarm"),
-        extend="both",
-        cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
-    )
-    add_hatching(axs[0], diff.mean(dim="identifier")["sfcWind"])
-    diff.std(dim="identifier")["sfcWind"].plot(
-        ax=axs[1],
-        vmin=0,
-        vmax=0.25,
-        cmap=plt.get_cmap("Greens"),
-        extend="both",
-        cbar_kwargs={
-            "label": "Standard deviation of wind speed change [m/s]",
-            "orientation": "horizontal",
-        },
-    )
-    (diff.mean(dim="identifier") / diff.std(dim="identifier"))["sfcWind"].plot(
-        ax=axs[2],
-        vmin=-2,
-        vmax=2,
-        extend="both",
-        cmap=plt.get_cmap("coolwarm"),
-        cbar_kwargs={
-            "label": "Mean wind change / standard deviation [1]",
-            "orientation": "horizontal",
-        },
-    )
-    for i, title in enumerate(["Mean", "Standard Deviation", "Signal to Noise"]):
-        axs[i].set_title(title)
-        add_coast_boarders(axs[i])
-    axs[0].text(
-        -0.1,
-        1.1,
-        experiment_id,
-        transform=axs[0].transAxes,
-        weight="bold",
-        **TEXT_PARAMS
-    )
-    plt.savefig(
-        "../plots/aggregate/cmip5_windchange_" + experiment_id + "_mean.png",
-        **FIG_PARAMS
-    )
+# CMIP5 and CORDEX average over GCMs and RCMs
+for experiment_family in ["CORDEX", "CMIP5"]:
+    for experiment_id in ["rcp26", "rcp45", "rcp85"]:
+        diff = xr.open_dataset(
+            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+        )
+        f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
+        plot_params = {"x": "lon", "y": "lat", "extend": "both"}
+        diff.mean(dim="identifier")["sfcWind"].plot(
+            ax=axs[0],
+            vmin=-0.5,
+            vmax=0.5,
+            cmap=plt.get_cmap("coolwarm"),
+            cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
+            **plot_params
+        )
+        add_hatching(axs[0], diff.mean(dim="identifier")["sfcWind"], x="lon", y="lat")
+        diff.std(dim="identifier")["sfcWind"].plot(
+            ax=axs[1],
+            vmin=0,
+            vmax=0.25,
+            cmap=plt.get_cmap("Greens"),
+            cbar_kwargs={
+                "label": "Standard deviation of wind speed change [m/s]",
+                "orientation": "horizontal",
+            },
+            **plot_params
+        )
+        (diff.mean(dim="identifier") / diff.std(dim="identifier"))["sfcWind"].plot(
+            ax=axs[2],
+            vmin=-2,
+            vmax=2,
+            cmap=plt.get_cmap("coolwarm"),
+            cbar_kwargs={
+                "label": "Mean wind change / standard deviation [1]",
+                "orientation": "horizontal",
+            },
+            **plot_params
+        )
+        for i, title in enumerate(["Mean", "Standard Deviation", "Signal to Noise"]):
+            axs[i].set_title(title)
+            add_coast_boarders(axs[i])
+        axs[0].text(
+            -0.1,
+            1.1,
+            experiment_id,
+            transform=axs[0].transAxes,
+            weight="bold",
+            **TEXT_PARAMS
+        )
+        plt.savefig(
+            "../plots/aggregate/" + experiment_family.lower() + "_windchange_" + experiment_id + "_mean.png",
+            **FIG_PARAMS
+        )
