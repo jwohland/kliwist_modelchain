@@ -68,7 +68,9 @@ def calculate_aggregate(ds, experiment_family):
     if experiment_family == "CORDEX":
         savg = make_averager_instance()
     elif experiment_family == "CMIP5":
-        savg = xe.SpatialAverager(ds, prepare_country_geometries())
+        savg = xe.SpatialAverager(
+            ds, prepare_country_geometries(), geom_dim_name="country"
+        )
     ds_agg = savg(ds)
     ds_agg = ds_agg.assign_coords(country=xr.DataArray(COUNTRIES, dims=("country",)))
     return ds_agg
