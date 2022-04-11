@@ -64,20 +64,23 @@ def make_averager_instance():
     return savg
 
 
-def calculate_aggregate(ds):
-    savg = make_averager_instance()
+def calculate_aggregate(ds, experiment_family):
+    if experiment_family == "CORDEX":
+        savg = make_averager_instance()
+    elif experiment_family == "CMIP5":
+        savg = xe.SpatialAverager(ds, prepare_country_geometries())
     ds_agg = savg(ds)
     ds_agg = ds_agg.assign_coords(country=xr.DataArray(COUNTRIES, dims=("country",)))
     return ds_agg
 
 
-def compute_aggregates():
-    for experiment_family in ["CORDEX", "CMIP5"]:
+def compute_all():
+    for experiment_family in ["CMIP5", "CORDEX"]:
         for experiment_id in ["rcp85", "rcp45", "rcp26"]:
             for metric in ["mean", "diff"]:
                 name = experiment_family.lower() + "_" + metric + "_" + experiment_id
                 diff = xr.open_dataset("../output/" + name + ".nc").squeeze()
-                diff_agg = calculate_aggregate(diff)
+                diff_agg = calculate_aggregate(diff, experiment_family)
                 diff_agg.to_netcdf(
                     "../output/country_aggregates/country_" + name + ".nc"
                 )
