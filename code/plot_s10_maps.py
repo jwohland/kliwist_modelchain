@@ -400,6 +400,5 @@ for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
         cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
         **plot_params
     )
-    #add_hatching(axs[i], (diff_cordex - diff_cmip5)["sfcWind"], x="lon", y="lat")
     axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
     add_coast_boarders(axs[i])
