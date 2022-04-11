@@ -71,10 +71,13 @@ def calculate_aggregate(ds):
     return ds_agg
 
 
-for experiment_family in ["CORDEX", "CMIP5"]:
-    for experiment_id in ["rcp85", "rcp45", "rcp26"]:
-        for metric in ["mean", "diff"]:
-            name = experiment_family.lower() + "_" + metric + "_" + experiment_id
-            diff = xr.open_dataset("../output/" + name + ".nc").squeeze()
-            diff_agg = calculate_aggregate(diff)
-            diff_agg.to_netcdf("../output/country_aggregates/country_" + name + ".nc")
+def compute_aggregates():
+    for experiment_family in ["CORDEX", "CMIP5"]:
+        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
+            for metric in ["mean", "diff"]:
+                name = experiment_family.lower() + "_" + metric + "_" + experiment_id
+                diff = xr.open_dataset("../output/" + name + ".nc").squeeze()
+                diff_agg = calculate_aggregate(diff)
+                diff_agg.to_netcdf(
+                    "../output/country_aggregates/country_" + name + ".nc"
+                )
