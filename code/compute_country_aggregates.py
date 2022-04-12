@@ -78,11 +78,16 @@ def calculate_aggregate(ds, experiment_family):
 
 def compute_all():
     for experiment_family in ["CMIP5", "CORDEX"]:
-        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
+        for experiment_id in ["rcp85", "rcp45", "rcp26", "historical"]:
             for metric in ["mean", "diff"]:
-                name = experiment_family.lower() + "_" + metric + "_" + experiment_id
-                diff = xr.open_dataset("../output/" + name + ".nc").squeeze()
-                diff_agg = calculate_aggregate(diff, experiment_family)
-                diff_agg.to_netcdf(
-                    "../output/country_aggregates/country_" + name + ".nc"
-                )
+                if metric == "diff" and experiment_id == "historical":
+                    print("diffs do not exist for historical by definition")
+                else:
+                    name = (
+                        experiment_family.lower() + "_" + metric + "_" + experiment_id
+                    )
+                    diff = xr.open_dataset("../output/" + name + ".nc").squeeze()
+                    diff_agg = calculate_aggregate(diff, experiment_family)
+                    diff_agg.to_netcdf(
+                        "../output/country_aggregates/country_" + name + ".nc"
+                    )
