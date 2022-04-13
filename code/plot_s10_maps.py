@@ -259,146 +259,155 @@ def plot_aggregate(ds, model, metric, axs, i, aggregate_dimension):
         )
     return i
 
+# execute everything from here onwards
 
-### Individual plots of all models ###
-for experiment_id in ["rcp26", "rcp45", "rcp85"]:
-    # CORDEX
-    diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
-    plot_array(diff)
-    plt.savefig("../plots/cordex_windchange_" + experiment_id + ".png", **FIG_PARAMS)
-    # CMIP5
-    diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
-    plot_array_CMIP5(diff)
-    plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
-
-### Aggregate plots ###
-# CORDEX
-ensemble_size = {
-    "RCM": {
-        "rcp26": 4,
-        "rcp45": 5,
-        "rcp85": 10,
-    },  # number of RCMs with >1 downscaled GCM
-    "GCM": {
-        "rcp26": 5,
-        "rcp45": 5,
-        "rcp85": 8,
-    },  # number of GCM with >1 downscaling RCM
-}
-for experiment_id in ["rcp26", "rcp45", "rcp85"]:
-    diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
-    ds = reindex_per_model(diff)
-    for aggregate_dimension in ["RCM", "GCM"]:
-        if aggregate_dimension == "RCM":  # RCMs per row as in matrix plot
-            nrows, ncols = ensemble_size[aggregate_dimension][experiment_id], 1
-            figsize = (4, len(experiment_id) * 2)
-            subplot_params = {"bottom": 0.08, "top": 0.98}
-            cbar_params = [0.1, 0.05, 0.8, 0.01]
-        elif aggregate_dimension == "GCM":  # GCMs per column
-            nrows, ncols = 1, ensemble_size[aggregate_dimension][experiment_id]
-            figsize = (len(experiment_id) * 4, 3.5)
-            subplot_params = {"bottom": 0.2, "top": 0.98, "right": 0.96, "left": 0.04}
-            cbar_params = [0.1, 0.15, 0.8, 0.04]
-        for metric in ["mean", "standard_deviation", "mean_per_std"]:
-            # prep figure
-            label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
-            f, axs = plt.subplots(
-                nrows=nrows, ncols=ncols, figsize=figsize, **SUBPLOT_KW
-            )
-            plt.subplots_adjust(**subplot_params)
-            cbar_ax = f.add_axes(cbar_params)
-            if aggregate_dimension == "RCM":
-                models_of_interest = unique(ds.RCMs)
-            elif aggregate_dimension == "GCM":
-                models_of_interest = unique(ds.GCMs)
-            i = 0  # can not use enumerate because sometimes loop is over insufficient data
-            for model in models_of_interest:
-                i = plot_aggregate(ds, model, metric, axs, i, aggregate_dimension)
-
-# CMIP5 and CORDEX average over GCMs and RCMs
-for experiment_family in ["CORDEX", "CMIP5"]:
+def make_individual_plots():
+    ### Individual plots of all models ###
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
-        diff = xr.open_dataset(
-            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+        # CORDEX
+        diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
+        plot_array(diff)
+        plt.savefig("../plots/cordex_windchange_" + experiment_id + ".png", **FIG_PARAMS)
+        # CMIP5
+        diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
+        plot_array_CMIP5(diff)
+        plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
+
+
+def make_aggregate_plots():
+    ### Aggregate plots ###
+    # CORDEX
+    ensemble_size = {
+        "RCM": {
+            "rcp26": 4,
+            "rcp45": 5,
+            "rcp85": 10,
+        },  # number of RCMs with >1 downscaled GCM
+        "GCM": {
+            "rcp26": 5,
+            "rcp45": 5,
+            "rcp85": 8,
+        },  # number of GCM with >1 downscaling RCM
+    }
+    for experiment_id in ["rcp26", "rcp45", "rcp85"]:
+        diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
+        ds = reindex_per_model(diff)
+        for aggregate_dimension in ["RCM", "GCM"]:
+            if aggregate_dimension == "RCM":  # RCMs per row as in matrix plot
+                nrows, ncols = ensemble_size[aggregate_dimension][experiment_id], 1
+                figsize = (4, len(experiment_id) * 2)
+                subplot_params = {"bottom": 0.08, "top": 0.98}
+                cbar_params = [0.1, 0.05, 0.8, 0.01]
+            elif aggregate_dimension == "GCM":  # GCMs per column
+                nrows, ncols = 1, ensemble_size[aggregate_dimension][experiment_id]
+                figsize = (len(experiment_id) * 4, 3.5)
+                subplot_params = {"bottom": 0.2, "top": 0.98, "right": 0.96, "left": 0.04}
+                cbar_params = [0.1, 0.15, 0.8, 0.04]
+            for metric in ["mean", "standard_deviation", "mean_per_std"]:
+                # prep figure
+                label = metric + " wind speed change 2080-2100 minus 1985-2005 [m/s]"
+                f, axs = plt.subplots(
+                    nrows=nrows, ncols=ncols, figsize=figsize, **SUBPLOT_KW
+                )
+                plt.subplots_adjust(**subplot_params)
+                cbar_ax = f.add_axes(cbar_params)
+                if aggregate_dimension == "RCM":
+                    models_of_interest = unique(ds.RCMs)
+                elif aggregate_dimension == "GCM":
+                    models_of_interest = unique(ds.GCMs)
+                i = 0  # can not use enumerate because sometimes loop is over insufficient data
+                for model in models_of_interest:
+                    i = plot_aggregate(ds, model, metric, axs, i, aggregate_dimension)
+
+    # CMIP5 and CORDEX average over GCMs and RCMs
+    for experiment_family in ["CORDEX", "CMIP5"]:
+        for experiment_id in ["rcp26", "rcp45", "rcp85"]:
+            diff = xr.open_dataset(
+                "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+            )
+            f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
+            plot_params = {"x": "lon", "y": "lat", "extend": "both"}
+            diff.mean(dim="identifier")["sfcWind"].plot(
+                ax=axs[0],
+                vmin=-0.5,
+                vmax=0.5,
+                cmap=plt.get_cmap("coolwarm"),
+                cbar_kwargs={
+                    "label": "Wind speed change [m/s]",
+                    "orientation": "horizontal",
+                },
+                **plot_params
+            )
+            add_hatching(axs[0], diff.mean(dim="identifier")["sfcWind"], x="lon", y="lat")
+            diff.std(dim="identifier")["sfcWind"].plot(
+                ax=axs[1],
+                vmin=0,
+                vmax=0.25,
+                cmap=plt.get_cmap("Greens"),
+                cbar_kwargs={
+                    "label": "Standard deviation of wind speed change [m/s]",
+                    "orientation": "horizontal",
+                },
+                **plot_params
+            )
+            (diff.mean(dim="identifier") / diff.std(dim="identifier"))["sfcWind"].plot(
+                ax=axs[2],
+                vmin=-2,
+                vmax=2,
+                cmap=plt.get_cmap("coolwarm"),
+                cbar_kwargs={
+                    "label": "Mean wind change / standard deviation [1]",
+                    "orientation": "horizontal",
+                },
+                **plot_params
+            )
+            for i, title in enumerate(["Mean", "Standard Deviation", "Signal to Noise"]):
+                axs[i].set_title(title)
+                add_coast_boarders(axs[i])
+            axs[0].text(
+                -0.1,
+                1.1,
+                experiment_id,
+                transform=axs[0].transAxes,
+                weight="bold",
+                **TEXT_PARAMS
+            )
+            plt.savefig(
+                "../plots/aggregate/"
+                + experiment_family.lower()
+                + "_windchange_"
+                + experiment_id
+                + "_mean.png",
+                **FIG_PARAMS
+            )
+
+def make_CORDEX_vs_CMIP5_plots():
+    # CORDEX vs. CMIP5 changes
+    f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
+    for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
+        # open data
+        diff_cordex = xr.open_dataset(
+            "../output/cordex_diff_" + experiment_id + ".nc"
+        ).mean(dim="identifier")
+        diff_cmip5 = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc").mean(
+            dim="identifier"
         )
-        f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
+        # regrid CORDEX to CMIP5 grid
+        regridder = xe.Regridder(diff_cordex, diff_cmip5, "bilinear", periodic=True)
+        diff_cordex = regridder(diff_cordex).squeeze()
+        # plot
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
-        diff.mean(dim="identifier")["sfcWind"].plot(
-            ax=axs[0],
-            vmin=-0.5,
-            vmax=0.5,
+        (diff_cordex - diff_cmip5)["sfcWind"].plot(
+            ax=axs[i],
+            levels=[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3],
             cmap=plt.get_cmap("coolwarm"),
-            cbar_kwargs={
-                "label": "Wind speed change [m/s]",
-                "orientation": "horizontal",
-            },
+            cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
             **plot_params
         )
-        add_hatching(axs[0], diff.mean(dim="identifier")["sfcWind"], x="lon", y="lat")
-        diff.std(dim="identifier")["sfcWind"].plot(
-            ax=axs[1],
-            vmin=0,
-            vmax=0.25,
-            cmap=plt.get_cmap("Greens"),
-            cbar_kwargs={
-                "label": "Standard deviation of wind speed change [m/s]",
-                "orientation": "horizontal",
-            },
-            **plot_params
-        )
-        (diff.mean(dim="identifier") / diff.std(dim="identifier"))["sfcWind"].plot(
-            ax=axs[2],
-            vmin=-2,
-            vmax=2,
-            cmap=plt.get_cmap("coolwarm"),
-            cbar_kwargs={
-                "label": "Mean wind change / standard deviation [1]",
-                "orientation": "horizontal",
-            },
-            **plot_params
-        )
-        for i, title in enumerate(["Mean", "Standard Deviation", "Signal to Noise"]):
-            axs[i].set_title(title)
-            add_coast_boarders(axs[i])
-        axs[0].text(
-            -0.1,
-            1.1,
-            experiment_id,
-            transform=axs[0].transAxes,
-            weight="bold",
-            **TEXT_PARAMS
-        )
-        plt.savefig(
-            "../plots/aggregate/"
-            + experiment_family.lower()
-            + "_windchange_"
-            + experiment_id
-            + "_mean.png",
-            **FIG_PARAMS
-        )
+        axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
+        add_coast_boarders(axs[i])
 
-
-# CORDEX vs. CMIP5 changes
-f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
-for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
-    # open data
-    diff_cordex = xr.open_dataset(
-        "../output/cordex_diff_" + experiment_id + ".nc"
-    ).mean(dim="identifier")
-    diff_cmip5 = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc").mean(
-        dim="identifier"
-    )
-    # regrid CORDEX to CMIP5 grid
-    regridder = xe.Regridder(diff_cordex, diff_cmip5, "bilinear", periodic=True)
-    diff_cordex = regridder(diff_cordex).squeeze()
-    # plot
-    plot_params = {"x": "lon", "y": "lat", "extend": "both"}
-    (diff_cordex - diff_cmip5)["sfcWind"].plot(
-        ax=axs[i],
-        levels=[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3],
-        cmap=plt.get_cmap("coolwarm"),
-        cbar_kwargs={"label": "Wind speed change [m/s]", "orientation": "horizontal"},
-        **plot_params
-    )
-    axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
-    add_coast_boarders(axs[i])
+if __name__ == '__main__':
+    make_individual_plots()
+    make_aggregate_plots()
+    make_CORDEX_vs_CMIP5_plots()
