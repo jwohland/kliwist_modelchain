@@ -11,7 +11,7 @@ PLOT_PARAMS = {
 
 def make_LUH_maps():
     f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
-    cbar_ax = f.add_axes([0.2, 0.06, 0.6, 0.05])
+    cbar_ax = f.add_axes([0.2, 0.2, 0.6, 0.05])
 
     for i, luhmodel in enumerate(["IMAGE", "MINICAM", "MESSAGE"]):
         lu_diff = xr.open_dataset("../output/LUH/diff_" + luhmodel + ".nc")
@@ -32,5 +32,5 @@ def make_LUH_maps():
             luhmodel + ", rcp" + ["2.6", "4.5", "8.5"][i]
         )  # mapping from IAM to RCP based on Hurtt et al. 2011 (DOI 10.1007/s10584-011-0153-2)Table 1
 
-    plt.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.2)
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.3)
     plt.savefig("../plots/LUH/diff_landuse.png", **FIG_PARAMS)
