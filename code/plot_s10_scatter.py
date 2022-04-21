@@ -24,7 +24,7 @@ def replace_long_gcm(longname, df_cmip5):
     return new_name
 
 
-def make_scatter_plot(df, filename, metric):
+def make_scatter_plot(df, filename, metric, country, experiment_id):
     sns.set_theme(style="whitegrid", palette="muted")
     ax = sns.swarmplot(data=df, x="experiment_family", y="sfcWind", hue="GCM", size=10)
     sns.boxplot(
@@ -62,39 +62,39 @@ def make_scatter_plot(df, filename, metric):
     )
     plt.close("all")
 
+def make_s10_scatter():
+    for metric in ["diff", "mean"]:
+        if metric == "diff":
+            experiments = ["rcp26", "rcp45", "rcp85"]
+        else:
+            experiments = ["historical", "rcp26", "rcp45", "rcp85"]
+        for experiment_id in experiments:
+            name = metric + "_" + experiment_id
+            diff_agg_CMIP5 = xr.open_dataset(
+                "../output/country_aggregates/country_cmip5_" + name + ".nc"
+            )
+            diff_agg_CORDEX = xr.open_dataset(
+                "../output/country_aggregates/country_cordex_" + name + ".nc"
+            )
 
-for metric in ["diff", "mean"]:
-    if metric == "diff":
-        experiments = ["rcp26", "rcp45", "rcp85"]
-    else:
-        experiments = ["historical", "rcp26", "rcp45", "rcp85"]
-    for experiment_id in experiments:
-        name = metric + "_" + experiment_id
-        diff_agg_CMIP5 = xr.open_dataset(
-            "../output/country_aggregates/country_cmip5_" + name + ".nc"
-        )
-        diff_agg_CORDEX = xr.open_dataset(
-            "../output/country_aggregates/country_cordex_" + name + ".nc"
-        )
+            for country in COUNTRIES:
+                # prepare data as pandas dataframe for plotting with seaborn
 
-        for country in COUNTRIES:
-            # prepare data as pandas dataframe for plotting with seaborn
+                # CMIP5
+                df_cmip5 = diff_agg_CMIP5.sel({"country": country}).to_dataframe()
+                df_cmip5["GCM"] = [x.split(".")[1] for x in df_cmip5.index]
+                df_cmip5["experiment_family"] = "CMIP5"
 
-            # CMIP5
-            df_cmip5 = diff_agg_CMIP5.sel({"country": country}).to_dataframe()
-            df_cmip5["GCM"] = [x.split(".")[1] for x in df_cmip5.index]
-            df_cmip5["experiment_family"] = "CMIP5"
+                # CORDEX
+                df_cordex = diff_agg_CORDEX.sel({"country": country}).to_dataframe()
+                df_cordex["GCM"] = [x.split(".")[1] for x in df_cordex.index]
+                df_cordex["GCM"] = [replace_long_gcm(x, df_cmip5) for x in df_cordex["GCM"]]
+                df_cordex["RCM"] = [x.split(".")[-2] for x in df_cordex.index]
+                df_cordex["experiment_family"] = "CORDEX"
 
-            # CORDEX
-            df_cordex = diff_agg_CORDEX.sel({"country": country}).to_dataframe()
-            df_cordex["GCM"] = [x.split(".")[1] for x in df_cordex.index]
-            df_cordex["GCM"] = [replace_long_gcm(x, df_cmip5) for x in df_cordex["GCM"]]
-            df_cordex["RCM"] = [x.split(".")[-2] for x in df_cordex.index]
-            df_cordex["experiment_family"] = "CORDEX"
+                # combine both
+                df_combined = pd.concat([df_cmip5, df_cordex])
 
-            # combine both
-            df_combined = pd.concat([df_cmip5, df_cordex])
-
-            # now use seaborn to generate scatterplots
-            filename = "scatter_" + metric + "_" + experiment_id + "_" + country
-            make_scatter_plot(df_combined, filename, metric)
+                # now use seaborn to generate scatterplots
+                filename = "scatter_" + metric + "_" + experiment_id + "_" + country
+                make_scatter_plot(df_combined, filename, metric, country, experiment_id)
