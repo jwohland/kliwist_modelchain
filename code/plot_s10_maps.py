@@ -407,7 +407,8 @@ def make_CORDEX_vs_CMIP5_plots():
         axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
         add_coast_boarders(axs[i])
 
-if __name__ == '__main__':
+
+def make_s10_maps():
     make_individual_plots()
     make_aggregate_plots()
     make_CORDEX_vs_CMIP5_plots()
