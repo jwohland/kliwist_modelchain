@@ -439,12 +439,7 @@ def make_CORDEX_vs_CMIP5_plots():
         )
         axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
         add_coast_boarders(axs[i])
-        plt.savefig(
-            "../plots/aggregate/diff_windchange_"
-            + experiment_id
-            + "_mean.png",
-            **FIG_PARAMS
-        )
+    plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
 
 
 def make_s10_maps():
