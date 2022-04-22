@@ -3,8 +3,10 @@ import xesmf as xe
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from plot_s10_maps import SUBPLOT_KW
 from scipy.stats import pearsonr, spearmanr
+from plot_s10_maps import FIG_PARAMS
 
 SCENARIO_DICT = {"IMAGE": "rcp26", "MINICAM": "rcp45", "MESSAGE": "rcp85"}
 EXTENT = SUBPLOT_KW["subplot_kw"]["extent"]
@@ -78,6 +80,40 @@ def select_rectangle(ds):
     return ds
 
 
+
+def convert_to_dataframe(ds_LUH, ds_CMIP5, threshold=0.01):
+    """
+    Convert xarray datasets to pandas dataframes for plotting
+
+    Only considers those grid boxes where absolute land use change is above the given threshold
+    :param ds_LUH:
+    :param ds_CMIP5:
+    :param threshold: value between 0 (no change) and 1 (maximum change)
+    :return:
+    """
+    # make and populate dataframe
+    ds_both = xr.merge([ds_LUH, ds_CMIP5])
+    ds_both = ds_both.drop(["lat_bounds", "lon_bounds", "height"])
+    df = ds_both.to_dataframe()
+    df = df.reset_index()
+    df = df[np.abs(df.gothr+df.gsecd) > threshold]  # only consider grid cells with at least 1% change
+    return df
+
+
+def plot_scatter(df, experiment_family):
+    # plotting
+    R = pearsonr(df["gothr+gsecd"], df["sfcWind"])[0]
+    rho = spearmanr(df["gothr+gsecd"], df["sfcWind"])[0]
+    g = sns.scatterplot(x="gothr+gsecd", y="sfcWind", hue="experiment_id", data=df, alpha=0.7)
+    g.legend_.set_title(None)
+    plt.xlabel("Change in primary plus secondary land [fraction of grid cell]")
+    plt.ylabel("Wind speed change [m/s]")
+    plt.title(experiment_family + ", r=" + str(np.round(R,2))+ ", rho=" + str(np.round(rho,2)))
+    plt.tight_layout()
+    plt.savefig("../plots/LUH/pattern_correlation.png", **FIG_PARAMS)
+    plt.clf()
+
+
 # Load data
 ds_LUH = load_LUH()
 ds_CMIP5 = load_CMIP5()
@@ -89,53 +125,5 @@ ds_LUH = select_rectangle(
 ds_CMIP5 = select_rectangle(ds_CMIP5)
 
 
-f, axs = plt.subplots(ncols=3, sharey=True, figsize=((10, 6)))
-xtot, ytot = [], []
-for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
-    ds_LUH_tmp = ds_LUH.sel(experiment_id=experiment_id)["gothr+gsecd"]
-    ds_CMIP5_tmp = ds_CMIP5.sel(experiment_id=experiment_id)
-    x = ds_LUH_tmp.where(np.abs(ds_LUH_tmp) > 0.0001).values.flatten()
-    y = ds_CMIP5_tmp["sfcWind"].where(np.abs(ds_LUH_tmp) > 0.0001).values.flatten()
-    mask = np.isfinite(x)
-    x = x[mask]
-    y = y[mask]
-    xtot.extend(x)
-    ytot.extend(y)
-    R = pearsonr(x, y)[0]
-    rho = spearmanr(x, y)[0]
-    sns.scatterplot(
-        x=x,
-        y=y,
-        ax=axs[i],
-        label="R=" + str(np.round(R, 2)) + "; rho = " + str(np.round(rho, 2)),
-    )
-    # sns.set_theme(style="darkgrid")
-    # sns.jointplot(x=x, y=y, ax=axs[i], kind="reg")
-    axs[i].set_title(experiment_id)
-axs[0].set_ylabel("Ensemble mean wind speed change [m/s]")
-axs[1].set_xlabel("Change in primary plus secondary land [fraction of grid cell]")
-plt.savefig("../plots/LUH/pattern_correlation.png")
-
-
-# plot all 3 scenarios in one
-xtot, ytot = np.asarray(xtot), np.asarray(ytot)
-
-for th in [0, 1, 5, 1]:
-    x = xtot[np.abs(xtot) > th / 100.0]
-    y = ytot[np.abs(xtot) > th / 100.0]
-    plt.clf()
-    R = pearsonr(x, y)[0]
-    rho = spearmanr(x, y)[0]
-    # f, ax = plt.subplots()
-    g = sns.jointplot(
-        x=x,
-        y=y,
-        label="R=" + str(np.round(R, 2)) + "; rho = " + str(np.round(rho, 2)),
-    )
-    g.plot_joint(sns.kdeplot, color="r", zorder=10, levels=6)
-    plt.title("Threshold = " + str(th))
-    plt.xlabel("Change in primary plus secondary land")
-    plt.ylabel("Wind speed change [m/s]")
-    plt.savefig("../plots/LUH/pattern_correlation_all_th_" + str(th) + ".png", dpi=300)
-
-# todo build up data in a pd Dataframe and make one scatterplot for all scenarios
+df = convert_to_dataframe(ds_LUH, ds_CMIP5, 0.01)
+plot_scatter(df, "CMIP5")
