@@ -26,7 +26,7 @@ def replace_long_gcm(longname, df_cmip5):
 
 def make_scatter_plot(df, filename, metric, country, experiment_id):
     sns.set_theme(style="whitegrid", palette="muted")
-    ax = sns.swarmplot(data=df, x="experiment_family", y="sfcWind", hue="GCM", size=10)
+    ax = sns.swarmplot(data=df, x="experiment_family", y="sfcWind", hue="GCM", size=8)
     sns.boxplot(
         data=df,
         x="experiment_family",
