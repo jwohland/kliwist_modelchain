@@ -20,7 +20,14 @@ def load_LUH():
         ds = xr.open_dataset("../output/LUH/diff_" + luhmodel + ".nc")
         ds = ds.assign_coords({"experiment_id": SCENARIO_DICT[luhmodel]})
         luh_list.append(ds)
-    return xr.concat(luh_list, dim="experiment_id")
+    ds = xr.concat(luh_list, dim="experiment_id")
+    # Following 3 lines are lat lon metadata additions needed for conservative remapping
+    ds.cf.add_bounds(
+        ["lon", "lat"]
+    )  # add bounds in between grid points (correct here because grid is regular)
+    ds.lon.attrs["standard_name"] = "longitude"
+    ds.lat.attrs["standard_name"] = "latitude"
+    return ds
 
 
 def load_CMIP5():
@@ -37,20 +44,22 @@ def load_CMIP5():
         )
         diff = diff.assign_coords({"experiment_id": experiment_id})
         CMIP5_list.append(diff)
-    return xr.concat(CMIP5_list, dim="experiment_id")
+    ds = xr.concat(CMIP5_list, dim="experiment_id")
+    ds = ds.cf.add_bounds(
+        ["lon", "lat"]
+    )  # add bounds that are needed for conservative remapping
+    return ds
 
 
-def regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method):
+def regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative"):
     """
     LUH grid is finer than CMIP5. Need to
     :param ds_LUH:
     :param ds_CMIP5:
-    :param method:
+    :param method: defaults to conservative to conserve area when remapping grid cell fractions from finer LUH to coarser CMIP grid
     :return:
     """
-    regridder = xe.Regridder(
-        ds_LUH, ds_CMIP5, method=method
-    )  # todo: should probably use conservative remapping here! But doesn't work out of the box because bounds not provided.
+    regridder = xe.Regridder(ds_LUH, ds_CMIP5, method=method)
     return regridder(ds_LUH)
 
 
@@ -69,11 +78,16 @@ def select_rectangle(ds):
     return ds
 
 
+# Load data
 ds_LUH = load_LUH()
 ds_CMIP5 = load_CMIP5()
 
-ds_LUH = select_rectangle(regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="bilinear"))
+# crop and regrid data
+ds_LUH = select_rectangle(
+    regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative")
+)
 ds_CMIP5 = select_rectangle(ds_CMIP5)
+
 
 f, axs = plt.subplots(ncols=3, sharey=True, figsize=((10, 6)))
 xtot, ytot = [], []
@@ -103,26 +117,25 @@ axs[1].set_xlabel("Change in primary plus secondary land [fraction of grid cell]
 plt.savefig("../plots/LUH/pattern_correlation.png")
 
 
-
 # plot all 3 scenarios in one
 xtot, ytot = np.asarray(xtot), np.asarray(ytot)
 
 for th in [0, 1, 5, 1]:
-    x = xtot[np.abs(xtot)>th/100.]
-    y=ytot[np.abs(xtot)>th/100.]
+    x = xtot[np.abs(xtot) > th / 100.0]
+    y = ytot[np.abs(xtot) > th / 100.0]
     plt.clf()
     R = pearsonr(x, y)[0]
     rho = spearmanr(x, y)[0]
-    #f, ax = plt.subplots()
+    # f, ax = plt.subplots()
     g = sns.jointplot(
         x=x,
         y=y,
         label="R=" + str(np.round(R, 2)) + "; rho = " + str(np.round(rho, 2)),
     )
     g.plot_joint(sns.kdeplot, color="r", zorder=10, levels=6)
-    plt.title("Threshold = " +str(th))
+    plt.title("Threshold = " + str(th))
     plt.xlabel("Change in primary plus secondary land")
     plt.ylabel("Wind speed change [m/s]")
-    plt.savefig("../plots/LUH/pattern_correlation_all_th_" + str(th)+".png", dpi=300)
+    plt.savefig("../plots/LUH/pattern_correlation_all_th_" + str(th) + ".png", dpi=300)
 
 # todo build up data in a pd Dataframe and make one scatterplot for all scenarios
