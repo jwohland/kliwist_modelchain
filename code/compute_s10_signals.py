@@ -293,33 +293,33 @@ def calculate_mean(
     ds = ds.sel(year=years).mean("year")
     return ds
 
-
-for experiment_family in ["CORDEX", "CMIP5"]:
-    if experiment_family == "CMIP5":
-        GCMs = get_gcm_list("all")
-        per_RCM = False
-    else:
-        GCMs, per_RCM = None, True
-    ds_ref = calculate_mean(
-        experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs
-    )
-    ds_ref.to_netcdf(
-        "../output/" + experiment_family.lower() + "_mean_historical.nc"
-    )  # save mean historical
-    update_identifier(ds_ref, "historical")
-    for experiment_id in ["rcp85", "rcp45", "rcp26"]:
+def calculate_signals():
+    for experiment_family in ["CORDEX", "CMIP5"]:
         if experiment_family == "CMIP5":
-            GCMs = get_gcm_list(experiment_id)
-        ds_future = calculate_mean(
-            experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
+            GCMs = get_gcm_list("all")
+            per_RCM = False
+        else:
+            GCMs, per_RCM = None, True
+        ds_ref = calculate_mean(
+            experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs
         )
-        ds_future.to_netcdf(
-            "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
-        )  # save mean future
-        update_identifier(ds_future, experiment_id)
+        ds_ref.to_netcdf(
+            "../output/" + experiment_family.lower() + "_mean_historical.nc"
+        )  # save mean historical
+        update_identifier(ds_ref, "historical")
+        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
+            if experiment_family == "CMIP5":
+                GCMs = get_gcm_list(experiment_id)
+            ds_future = calculate_mean(
+                experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
+            )
+            ds_future.to_netcdf(
+                "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
+            )  # save mean future
+            update_identifier(ds_future, experiment_id)
 
-        # calculate and save difference
-        diff = ds_future - ds_ref
-        diff.to_netcdf(
-            "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
-        )
+            # calculate and save difference
+            diff = ds_future - ds_ref
+            diff.to_netcdf(
+                "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+            )
