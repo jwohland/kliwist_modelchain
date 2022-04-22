@@ -85,7 +85,9 @@ def get_dataset_dictionary(
             frequency=frequency,
             experiment=experiment_id,
         )
-        subset.df.to_csv("../input/CMIP5_"+experiment_id+".csv")  # dump relevant parts of underlying catalogue
+        subset.df.to_csv(
+            "../input/CMIP5_" + experiment_id + "_" + variable_id + ".csv"
+        )  # dump relevant parts of underlying catalogue
         if GCMs:  # filter for those GCMs that are of interest
             ds_dict = {}
             for GCM in GCMs:
@@ -112,7 +114,9 @@ def get_dataset_dictionary(
             experiment_id=experiment_id,
             member=standard_ensemble_member,
         )
-        subset.df.to_csv("../input/CORDEX_" + experiment_id + ".csv")  # dump relevant parts of underlying catalogue
+        subset.df.to_csv(
+            "../input/CORDEX_" + experiment_id + "_" + variable_id + ".csv"
+        )  # dump relevant parts of underlying catalogue
         if per_RCM:
             import numpy as np
 
