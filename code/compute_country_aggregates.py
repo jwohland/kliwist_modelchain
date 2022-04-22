@@ -33,7 +33,7 @@ COUNTRIES = [
     "Spain",
     "Sweden",
 ]  # EU
-COUNTRIES.extend(["Norway", "Switzerland", "United Kingdom"])  # non-EU
+COUNTRIES.extend(["Norway", "Switzerland", "United Kingdom", "Ukraine", "Turkey"])  # non-EU
 
 
 def prepare_country_geometries():
