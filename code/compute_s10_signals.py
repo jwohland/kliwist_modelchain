@@ -75,9 +75,9 @@ def get_dataset_dictionary(
     """
     link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster #todo generalize
     if experiment_family == "CMIP5":
-        catalogue = "dkrz_cmip5_disk_netcdf.json"
+        catalogue = "dkrz_cmip5_disk.json"
     elif experiment_family == "CORDEX":
-        catalogue = "dkrz_cordex_disk_netcdf.json"
+        catalogue = "dkrz_cordex_disk.json"
     cat = intake.open_esm_datastore(link_catalogue + catalogue)
     if experiment_family == "CMIP5":
         subset = cat.search(
