@@ -51,7 +51,7 @@ for year in $years ; do
           # merge t-files and convert to netcdf with remo variable names
           cdo -f nc -t remo mergetime e${user}${exp}t${year}${month}???? e${user}${exp}t${year}${month}.nc
     # select variables
-    cdo selcode,130,131,132,134,156 e${user}${exp}t${year}${month}.nc $odir/e${user}${exp}t${year}${month}_wnd.nc
+    cdo selcode,129,130,131,132,134,156 e${user}${exp}t${year}${month}.nc $odir/e${user}${exp}t${year}${month}_wnd.nc
           # remove temp-files
     rm e${user}${exp}t${year}${month}????
     rm e${user}${exp}t${year}${month}.nc
