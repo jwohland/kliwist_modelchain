@@ -31,12 +31,6 @@ mkdir -p $odir
 cd $tdir
 lfs setstripe -E 1G -c 1 -S 1M -E 4G -c 4 -S 1M -E -1 -c 8 -S 1M ${tdir}  # recommendation from https://docs.dkrz.de/doc/datastorage/hsm/retrievals.html to increase speed
 
-#
-
-slk retrieve $archdir/year2000/e${user}${exp}t*.tar $odir
-
-#slk_helpers search_limited "{"$and": [{"path": {"$gte": "$archdir"}}, {"resources.name": {"$regex": "e${user}${exp}t*.tar"}}]}"
-slk_helpers search_limited "{"$and": [{"path": {"$gte": "${archdir}/year2000"}}, {"resources.name": {"$regex": "/^e${user}${exp}t/"}}]}"
 
 # loop over years
 for year in $years ; do
