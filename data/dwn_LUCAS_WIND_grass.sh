@@ -1,9 +1,11 @@
 #!/bin/bash
 # download remo data from archive
+# 062008 - LUCAS GRASS
 set -exu
 module load slk  # need to run slk login at least once before using this script
 
-#star year
+
+# start year
 syear=1986
 # end year
 eyear=2015
@@ -60,14 +62,15 @@ for year in $years ; do
       echo $year $month
     # extract t-files (every 6h one file)
     tar xvf ${tfile}_dwn.tar
-    rm ${tfile}_dwn.tar
     # merge t-files and convert to netcdf with remo variable names
     cdo -f nc -t remo mergetime e${user}${exp}t${year}${month}???? e${user}${exp}t${year}${month}.nc
     # select variables and copy to scratch
     cdo selcode,129,130,131,132,134,156 e${user}${exp}t${year}${month}.nc preprocessed/e${user}${exp}t${year}${month}_wnd.nc
     # remove temp-files
-    # rm e${user}${exp}t${year}${month}????
+    rm e${user}${exp}t${year}${month}????
     rm e${user}${exp}t${year}${month}.nc
     done
 done
-    
+
+# remove files that are no longer needed later
+#rm ${tfile}_dwn.tar  # skipped for now
