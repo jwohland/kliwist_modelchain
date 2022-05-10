@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 # download remo data from archive
 set -exu
 module load slk  # need to run slk login at least once before using this script
@@ -31,6 +31,40 @@ mkdir -p $odir
 cd $tdir
 lfs setstripe -E 1G -c 1 -S 1M -E 4G -c 4 -S 1M -E -1 -c 8 -S 1M ${tdir}  # recommendation from https://docs.dkrz.de/doc/datastorage/hsm/retrievals.html to increase speed
 
+# search for all t-files
+search_id_raw=`slk_helpers search_limited '{"$and": [{"path": {"$gte": "/arch/ch0636/g300089/exp062008"}}, {"resources.name": {"$regex": "t.......tar$"}}]}'`
+search_id=`echo $search_id_raw | tail -n 1 | sed 's/[^0-9]*//g'`
+echo "The search ID is ${search_id}"
+# retrieve
+slk retrieve ${search_id} $fdir/$tfile.tar $tdir
+# '$?' captures the exit code of the previous command (you can put it in
+# the next line after each slk command).
+if [ $? -ne 0 ]; then
+    >&2 echo "an error occurred in slk retrieve call"
+else
+    echo "retrieval successful"
+fi
+
+# list all files available for year 2000 and experiment with slk search
+testdir=$archdir/year2000
+slk list $testdir | cat
+slk_helpers search_limited '{"$and": [{"path": {"$gte": "/arch/ch0636/g300089/exp062008/year2000"}}, {"resources.name": {"$regex": ".tar$"}}]}'
+# works. Now filter for those files that matter
+slk_helpers search_limited '{"$and": [{"path": {"$gte": "/arch/ch0636/g300089/exp062008/year2000"}}, {"resources.name": {"$regex": "t.......tar$"}}]}'
+# works. Now try for all years
+slk_helpers search_limited '{"$and": [{"path": {"$gte": "/arch/ch0636/g300089/exp062008"}}, {"resources.name": {"$regex": "t.......tar$"}}]}'
+# also works. Above should be preferred option
+
+
+
+
+slk_helpers search_limited '{"$and": [{"path": {"$gte": "$testdir"}}, {"resources.name": {"$regex": "t.......tar$"}}]}'
+
+# it is a problem with the ' vs ". Example: echo '$testdir' yields $testdir, while echo "$testdir" yields value of testdir
+slk_helpers search_limited '{'$and': [{"path": {'$gte': "$testdir"}}, {"resources.name": {'$regex': ".tar$"}}]}'
+
+testpath="/arch/ch0636/g300089/exp062008/year2000"
+slk_helpers search_limited '{"$and": [{"path": {"$gte": "$testpath"}}, {"resources.name": {"$regex": ".tar$"}}]}'
 
 # loop over years
 for year in $years ; do
