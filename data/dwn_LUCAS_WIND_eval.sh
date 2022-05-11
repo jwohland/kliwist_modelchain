@@ -1,6 +1,8 @@
 #!/bin/bash
-# download remo data from archive
-# 062010 - LUCAS EVAL
+# Example script to retrieve data from archive using slk
+# The key is to search for data and then retrieve all files at the same time to speed up the retrieval
+# This particular example retrieves REMO LUCAS data from archive
+# 062010 stands for LUCAS EVAL
 set -exu
 module load slk  # need to run slk login at least once before using this script
 
@@ -32,7 +34,7 @@ lfs setstripe -E 1G -c 1 -S 1M -E 4G -c 4 -S 1M -E -1 -c 8 -S 1M ${odir}  # reco
 search_id_raw=`slk_helpers search_limited '{"$and": [{"path": {"$gte": "/arch/ch0636/g300089/exp062010"}}, {"resources.name": {"$regex": "t.......tar$"}}]}'`
 search_id=`echo $search_id_raw | tail -n 1 | sed 's/[^0-9]*//g'`
 echo "The search ID is ${search_id}"
-# retrieve
+# retrieve all files simultaneously
 slk retrieve ${search_id} $odir
 # '$?' captures the exit code of the previous command (you can put it in
 # the next line after each slk command).
@@ -71,5 +73,7 @@ for year in $years ; do
     done
 done
 
-# remove files that are no longer needed later
-#rm ${tfile}_dwn.tar  # skipped for now
+# move output to work directory because scratch purged every 2 weeks
+wdir=/work/ch0636/g300106/projects/kliwist_modelchain/data/LUCAS
+mkdir -p ${wdir}/${user}${exp}
+mv preprocessed/* ${wdir}/${user}${exp}

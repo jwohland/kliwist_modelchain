@@ -71,5 +71,7 @@ for year in $years ; do
     done
 done
 
-# remove files that are no longer needed later
-#rm ${tfile}_dwn.tar  # skipped for now
+# move output to work directory because scratch purged every 2 weeks
+wdir=/work/ch0636/g300106/projects/kliwist_modelchain/data/LUCAS
+mkdir -p ${wdir}/${user}${exp}
+mv preprocessed/* ${wdir}/${user}${exp}
