@@ -5,7 +5,7 @@ set -exu
 module load slk  # need to run slk login at least once before using this script
 
 # start year
-syear=1986
+syear=1979
 # end year
 eyear=2015
 # user number
