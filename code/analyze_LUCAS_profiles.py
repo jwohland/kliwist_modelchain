@@ -1,7 +1,6 @@
 import xarray as xr
 import matplotlib.pyplot as plt
 import seaborn as sns
-from cordex import preprocessing as preproc
 import sys
 import numpy as np
 import cartopy.crs as ccrs
@@ -101,7 +100,8 @@ for lat_offset in [-10, 0, 10]:
 """
 # plot mean change maps at different height levels
 """
-rotated_pole = ccrs.RotatedPole(-162, 39.25) # this is guessed based on https://pyremo.readthedocs.io/en/stable/remo-dataset.html
+rotated_pole = ccrs.RotatedPole(-162, 39.25)
+# pole location can be obtained from ds.rotated_pole.attrs["grid_north_pole_longitude"], ds.rotated_pole.attrs["grid_north_pole_latitude"]
 f, axs = plt.subplots(
     ncols=2, nrows=5, figsize=((10, 14)), subplot_kw={"projection": rotated_pole}
 )
