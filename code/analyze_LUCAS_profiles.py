@@ -156,36 +156,6 @@ plt.savefig("../plots/LUCAS/REMO_absolute_change_winds_vertical.png", **FIG_PARA
 """
 # plot convergence maps for different absolute and relative convergence criteria
 """
-
-# absolute thresholds
-# per location check
-# a) lowest level wind change is larger than threshold
-# b) lowest level at which wind change smaller than threshold
-threshold = 0.1  # m/s
-convergence_map = np.zeros((121, 129))
-
-#  todo horribly slow as expected from looping
-for i_rlat in range(121):
-    for i_rlon in range(129):
-        print(i_rlon)
-        tmp = (
-            ds_eval_minus_forest.isel({"rlat": i_rlat, "rlon": i_rlon})["S"].values
-            < threshold
-        )
-        if tmp[0] == False:  # criterion a
-            if (tmp == True).any():
-                convergence_level = np.where(tmp == True)[0][
-                    -1
-                ]  # criterion b. Note that levels are sorted from top to bottom
-                convergence_geopotential = float(
-                    ds_all["FI"]
-                    .sel({"experiment": "grass"})
-                    .isel({"rlat": i_rlat, "rlon": i_rlon, "lev": convergence_level})
-                    .values
-                )
-                convergence_map[i_rlat, i_rlon] = convergence_geopotential
-    break
-
 # todo somewhat better approach but needs double checking whether correct
 rotated_pole = ccrs.RotatedPole(-162, 39.25)
 # pole location can be obtained from ds.rotated_pole.attrs["grid_north_pole_longitude"], ds.rotated_pole.attrs["grid_north_pole_latitude"]
