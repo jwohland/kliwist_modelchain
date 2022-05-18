@@ -159,7 +159,7 @@ def plot_mean_change(ds_grass_minus_eval, ds_eval_minus_forest):
             **TEXT_PARAMS
         )
     axs[0, 0].set_title("GRASS - EVAL")
-    axs[0, 1].set_title("FOREST - GRASS")
+    axs[0, 1].set_title("EVAL - FOREST")
 
     plt.tight_layout()
     plt.savefig(
