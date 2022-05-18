@@ -74,15 +74,15 @@ def plot_vertical_profile(ds_all):
         for lon_offset in [-10, 0, 10]:
             ds_region = average_over_region(ds_all, lat_offset, lon_offset).compute()
             f, axs = plt.subplots(ncols=2, figsize=((12, 5)))
-            df = ds_all.sel(
+            df = ds_region.sel(
                 {"lev": slice(0, 27)}
-            ).to_dataframe()  # convert 8 lowest levels to dataframe for plotting
+            ).to_dataframe()  # convert to dataframe for plotting
             sns.scatterplot(data=df, y="S", x="FI", ax=axs[0], hue="experiment")
             axs[0].axvline(x=df["FIB"].values[0], color="grey", ls="--")
             axs[0].set_ylabel(r"Wind speed [m/s]")
             axs[0].set_xlabel("Geopotential [m]")
 
-            df = ds_all.sel(
+            df = ds_region.sel(
                 {"lev": slice(23, 27)}
             ).to_dataframe()  # convert 5 lowest levels to dataframe for plotting
             # axs[1].set(yscale="log")
