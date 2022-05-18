@@ -26,12 +26,10 @@ def open_and_preprocess(experiment):
     :return:
     """
     ds = xr.concat(
-        xr.open_mfdataset(
-            [
-                data_path + experiment_dictionary[experiment] + filename
-                for filename in ["/*198*.nc", "/*199*.nc", "/*200*.nc"]
-            ]
-        ),
+        [
+            xr.open_mfdataset(data_path + experiment_dictionary[experiment] + filename)
+            for filename in ["/*198*.nc", "/*199*.nc", "/*200*.nc"]
+        ],
         dim="time",
     )
     # remove variables that aren't needed for now
@@ -64,9 +62,7 @@ def average_over_region(ds, r_lat_center, r_lon_center):
             "rlat": slice(-2 + r_lat_center, 2 + r_lat_center),
             "rlon": slice(-2 + r_lon_center, 2 + r_lon_center),
         }
-    ).mean(
-        dim=["rlat", "rlon"]
-    )  # todo generalize
+    ).mean(dim=["rlat", "rlon"])
     return ds
 
 
@@ -166,7 +162,9 @@ def plot_mean_change(ds_grass_minus_eval, ds_eval_minus_forest):
     axs[0, 1].set_title("FOREST - GRASS")
 
     plt.tight_layout()
-    plt.savefig("../plots/LUCAS/REMO_1980-2010_absolute_change_winds_vertical.png", **FIG_PARAMS)
+    plt.savefig(
+        "../plots/LUCAS/REMO_1980-2010_absolute_change_winds_vertical.png", **FIG_PARAMS
+    )
 
 
 def plot_convergence_maps(ds_grass_minus_eval, ds_eval_minus_forest):
@@ -215,6 +213,7 @@ def plot_convergence_maps(ds_grass_minus_eval, ds_eval_minus_forest):
         dpi=300,
         facecolor="white",
     )
+
 
 def analyze_LUCAS():
     # open and prepare data
