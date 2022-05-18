@@ -92,7 +92,7 @@ def plot_vertical_profile(ds_all):
             axs[1].set_xlabel("Geopotential [m]")
 
             plt.suptitle(
-                r"1979 averaged over rlon"
+                r"1980-2010 averaged over rlon"
                 + str(lon_offset)
                 + ", rlat "
                 + str(lat_offset)
@@ -120,7 +120,7 @@ def plot_mean_change(ds_grass_minus_eval, ds_eval_minus_forest):
         ncols=2, nrows=5, figsize=((10, 14)), subplot_kw={"projection": rotated_pole}
     )
 
-    for j, lev in enumerate(list(ds_all.lev.values)[-5:]):
+    for j, lev in enumerate(list(ds_grass_minus_eval.lev.values)[-5:]):
         ds_grass_minus_eval["S"].sel({"lev": lev}).plot(
             ax=axs[j, 0],
             # x="lon",
