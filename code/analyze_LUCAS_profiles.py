@@ -27,11 +27,11 @@ def open_and_preprocess(experiment):
     """
     ds = xr.concat(
         [
-            xr.open_mfdataset(data_path + experiment_dictionary[experiment] + filename)
-            for filename in ["/*198*.nc", "/*199*.nc", "/*200*.nc"]
+            xr.open_mfdataset(data_path + experiment_dictionary[experiment] + "/*" + str(year) + "*.nc")
+            for year in range(1986, 2016)
         ],
         dim="time",
-    )
+    )  # 01/01/1986 - 31/12/2015 is normal analysis period in LUCAS (i.e., 1979 - 1986 considered spin-up)
     # remove variables that aren't needed for now
     ds = ds.drop(["PS", "hyai", "hybi", "hyam", "hybm", "T"])
     # bring wind variables on same grid. Their grids are shifted by half a cell east or northward
@@ -92,7 +92,7 @@ def plot_vertical_profile(ds_all):
             axs[1].set_xlabel("Geopotential [m]")
 
             plt.suptitle(
-                r"1980-2010 averaged over rlon"
+                r"1986-2016 averaged over rlon"
                 + str(lon_offset)
                 + ", rlat "
                 + str(lat_offset)
@@ -100,7 +100,7 @@ def plot_vertical_profile(ds_all):
             )
 
             plt.savefig(
-                "../plots/LUCAS/scatter_1980-2010_latoffset"
+                "../plots/LUCAS/scatter_1986-2016_latoffset"
                 + str(lat_offset)
                 + "_lonoffset_"
                 + str(lon_offset)
@@ -119,14 +119,12 @@ def plot_mean_change(ds_grass_minus_eval, ds_eval_minus_forest):
     f, axs = plt.subplots(
         ncols=2, nrows=5, figsize=((10, 14)), subplot_kw={"projection": rotated_pole}
     )
-
+    levels = np.linspace(-.9, .9, 10)
     for j, lev in enumerate(list(ds_grass_minus_eval.lev.values)[-5:]):
         ds_grass_minus_eval["S"].sel({"lev": lev}).plot(
             ax=axs[j, 0],
-            # x="lon",
-            # y="lat",
             cmap=plt.get_cmap("coolwarm"),
-            levels=np.linspace(-2, 2, 9),
+            levels=levels,
             extend="both",
             cbar_kwargs={
                 "label": "Wind speed change [m/s]",
@@ -135,10 +133,8 @@ def plot_mean_change(ds_grass_minus_eval, ds_eval_minus_forest):
         )
         ds_eval_minus_forest["S"].sel({"lev": lev}).plot(
             ax=axs[j, 1],
-            # x="lon",
-            # y="lat",
             cmap=plt.get_cmap("coolwarm"),
-            levels=np.linspace(-2, 2, 9),
+            levels=levels,
             extend="both",
             cbar_kwargs={
                 "label": "Wind speed change [m/s]",
@@ -163,7 +159,7 @@ def plot_mean_change(ds_grass_minus_eval, ds_eval_minus_forest):
 
     plt.tight_layout()
     plt.savefig(
-        "../plots/LUCAS/REMO_1980-2010_absolute_change_winds_vertical.png", **FIG_PARAMS
+        "../plots/LUCAS/REMO_1986-2016_absolute_change_winds_vertical.png", **FIG_PARAMS
     )
 
 
@@ -209,7 +205,7 @@ def plot_convergence_maps(ds_grass_minus_eval, ds_eval_minus_forest):
 
     plt.tight_layout()
     plt.savefig(
-        "../plots/LUCAS/REMO_1980-2010_convergence_maps.png",
+        "../plots/LUCAS/REMO_1986-2016_convergence_maps.png",
         dpi=300,
         facecolor="white",
     )
