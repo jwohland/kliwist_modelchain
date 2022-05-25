@@ -69,7 +69,7 @@ def prepare_country_geometries(onshore=True):
     else:
         regs = gpd.read_file("../data/EEZ/eez_v11.shp")
         regs = regs.set_index("TERRITORY1")
-        regs = regs[regs.GEONAME.str.contains("Exclusive Economic Zone")]  # database also contains five small areas (smaller than 100x100km) that are not exclusive to individual countries
+        regs = regs[regs.GEONAME.str.contains("Exclusive")]  # database also contains five small areas (smaller than 100x100km) that are not exclusive to individual countries
         countries = OFFSHORE_COUNTRIES
     regs["geometry"] = regs.simplify(
         tolerance=0.05, preserve_topology=True
