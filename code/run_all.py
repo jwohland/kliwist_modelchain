@@ -5,13 +5,15 @@ import plot_lu_maps
 import plot_s10_maps
 import plot_s10_scatter
 import plot_s10_country_heatmaps
+import analyze_LUCAS_profiles
 """
 Calculations
 """
 # Compute changes in 10m wind speeds
 compute_s10_signals.calculate_signals()
 # Compute country aggregates
-compute_country_aggregates.compute_all()
+compute_country_aggregates.compute_all(True)  # onshore
+compute_country_aggregates.compute_all(False)  #offshore
 
 """
 Plots
@@ -24,3 +26,7 @@ plot_s10_scatter.make_s10_scatter()
 plot_s10_country_heatmaps.make_s10_heatmaps()
 # Maps of land use change forcing data
 plot_lu_maps.make_LUH_maps()
+
+
+# Plots of REMO LUCAS simulations
+analyze_LUCAS_profiles.analyze_LUCAS()
