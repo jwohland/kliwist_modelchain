@@ -24,3 +24,10 @@ is not available at DKRZ.
 The model didn't make wind speeds (`sfcWind`) available but only wind components (`ua` and `va`). 
 The lowest model level is substantially higher than 10m, namely around 80m. 
 For lack of comparability, NorESM1-M is thus excluded here. 
+
+
+### Shapefile of exclusive economic zones (EEZ)
+
+The offshore assessment relies on the shapes of EEZ, in particular the World EEZ v11 (2019-11-18) shapefile that can be downloaded from https://www.marineregions.org/downloads.php 
+
+Download and extract the data to `data/EEZ/` and remove everything except for the LICENSE and `eez_v11.shp`.
