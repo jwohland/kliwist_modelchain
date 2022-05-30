@@ -103,4 +103,6 @@ def make_s10_scatter(onshore=True):
 
                 # now use seaborn to generate scatterplots
                 filename = "scatter_" + metric + "_" + experiment_id + "_" + country
+                if not onshore:
+                    filename += "_offshore"
                 make_scatter_plot(df_combined, filename, metric, country, experiment_id)
