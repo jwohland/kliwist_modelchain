@@ -24,7 +24,8 @@ plot_s10_maps.make_s10_maps()
 plot_s10_scatter.make_s10_scatter(onshore=True)
 plot_s10_scatter.make_s10_scatter(onshore=True)
 # Heatmaps of wind per country
-plot_s10_country_heatmaps.make_s10_heatmaps()
+plot_s10_country_heatmaps.make_s10_heatmaps(onshore=True)
+plot_s10_country_heatmaps.make_s10_heatmaps(onshore=False)
 # Maps of land use change forcing data
 plot_lu_maps.make_LUH_maps()
 
