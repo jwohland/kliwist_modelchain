@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from compute_country_aggregates import COUNTRIES
+from compute_country_aggregates import COUNTRIES, OFFSHORE_COUNTRIES
 import xarray as xr
 import seaborn as sns
 import pandas as pd
@@ -62,7 +62,7 @@ def make_scatter_plot(df, filename, metric, country, experiment_id):
     )
     plt.close("all")
 
-def make_s10_scatter():
+def make_s10_scatter(onshore=True):
     for metric in ["diff", "mean"]:
         if metric == "diff":
             experiments = ["rcp26", "rcp45", "rcp85"]
@@ -70,14 +70,20 @@ def make_s10_scatter():
             experiments = ["historical", "rcp26", "rcp45", "rcp85"]
         for experiment_id in experiments:
             name = metric + "_" + experiment_id
+            path = "../output/country_aggregates/"
+            if onshore:
+                relevant_countries = COUNTRIES
+            else:
+                relevant_countries = OFFSHORE_COUNTRIES
+                path += "offshore/"
             diff_agg_CMIP5 = xr.open_dataset(
-                "../output/country_aggregates/country_cmip5_" + name + ".nc"
+                path + "country_cmip5_" + name + ".nc"
             )
             diff_agg_CORDEX = xr.open_dataset(
-                "../output/country_aggregates/country_cordex_" + name + ".nc"
+                path + "country_cordex_" + name + ".nc"
             )
 
-            for country in COUNTRIES:
+            for country in relevant_countries:
                 # prepare data as pandas dataframe for plotting with seaborn
 
                 # CMIP5

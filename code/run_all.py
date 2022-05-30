@@ -12,8 +12,8 @@ Calculations
 # Compute changes in 10m wind speeds
 compute_s10_signals.calculate_signals()
 # Compute country aggregates
-compute_country_aggregates.compute_all(True)  # onshore
-compute_country_aggregates.compute_all(False)  #offshore
+compute_country_aggregates.compute_all(onshore=True)  # onshore
+compute_country_aggregates.compute_all(onshore=False)  #offshore
 
 """
 Plots
@@ -21,7 +21,7 @@ Plots
 # Maps of 10m wind speeds
 plot_s10_maps.make_s10_maps()
 # Scatter plots of wind change per country
-plot_s10_scatter.make_s10_scatter()
+plot_s10_scatter.make_s10_scatter(onshore=True)
 # Heatmaps of wind per country
 plot_s10_country_heatmaps.make_s10_heatmaps()
 # Maps of land use change forcing data
