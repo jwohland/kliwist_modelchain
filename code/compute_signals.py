@@ -306,6 +306,13 @@ def calculate_mean(
         per_RCM,
         GCMs=GCMs,
     )
+    # manual fixes for some datasets
+    # ICHEC-EC-EARTH throws a key Error for tas. Remove manually for now.
+    try:
+        del ds_dict["ICHEC.EC-EARTH.historical.Amon"]
+    except:
+        """"""
+
     ds = dictionary_to_dataset(
         ds_dict, experiment_family, experiment_id, time_aggregation
     )
@@ -313,7 +320,7 @@ def calculate_mean(
 
 
 def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
-    out_path = "../output/" + variable_id +"/"
+    out_path = "../output/" + variable_id + "/"
     if time_aggregation == "monthly":
         out_path += "monthly/"
     for experiment_family in ["CORDEX", "CMIP5"]:
