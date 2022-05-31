@@ -10,7 +10,8 @@ import analyze_LUCAS_profiles
 Calculations
 """
 # Compute changes in 10m wind speeds
-compute_s10_signals.calculate_signals()
+compute_s10_signals.calculate_signals(time_aggregation="annual")
+compute_s10_signals.calculate_signals(time_aggregation="monthly")
 # Compute country aggregates
 compute_country_aggregates.compute_all(onshore=True)  # onshore
 compute_country_aggregates.compute_all(onshore=False)  #offshore
