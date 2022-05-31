@@ -260,11 +260,11 @@ def dictionary_to_dataset(
             preprocess_cmip_dataset(data_dict[identifier], identifier)
             for identifier in data_dict.keys()
         ]
+    list_ds = [ds for ds in list_ds if ds]  # remove None
     # aggregate temporally
     list_ds = [
         aggregate_temporally(ds, experiment_id, time_aggregation) for ds in list_ds
     ]
-    list_ds = [ds for ds in list_ds if ds]  # remove None
     if experiment_family.lower() == "cmip5":
         # regrid all CMIP5 results to grid of first model
         import xesmf as xe
