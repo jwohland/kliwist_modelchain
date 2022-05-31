@@ -200,8 +200,6 @@ def preprocess_cordex_dataset(ds, identifier):
             ],
             errors="ignore",
         )
-        .groupby("time.year")  # todo change to monthly
-        .mean("time")
         .assign_coords({"identifier": identifier})
     )
     return ds
@@ -211,8 +209,6 @@ def preprocess_cmip_dataset(ds, identifier):
     ds = (
         ds.drop(["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore")
         .assign_coords({"identifier": identifier})
-        .groupby("time.year")  # todo change to monthly
-        .mean("time")
     )
     ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
     ds = ds.assign_attrs(
@@ -275,7 +271,10 @@ def calculate_mean(
     experiment_id,
     per_RCM=False,
     GCMs=None,
+    time_aggregation="annual",
 ):
+    assert time_aggregation in ["annual", "monthly"]  # monthly and annual resampling supported
+
     ds_dict = get_dataset_dictionary(
         experiment_family,
         variable_id,
@@ -286,14 +285,21 @@ def calculate_mean(
         GCMs=GCMs,
     )
     ds = dictionary_to_dataset(ds_dict, experiment_family)
+    # aggregate temporally
     if experiment_id == "historical":
         years = slice("1985", "2005")
     else:
         years = slice("2080", "2100")
-    ds = ds.sel(year=years).mean("year")  # todo can this stay as is for monthly?
+    if time_aggregation == "annual":
+        ds = ds.sel(time=years).mean("time")
+    elif time_aggregation == "monthly":
+        ds = ds.sel(time=years).groupby("time.month").mean("time")
     return ds
 
-def calculate_signals():
+def calculate_signals(time_aggregation="annual"):
+    out_path = "../output/"
+    if time_aggregation == "monthly":
+        out_path += "monthly/"
     for experiment_family in ["CORDEX", "CMIP5"]:
         if experiment_family == "CMIP5":
             GCMs = get_gcm_list("all")
@@ -301,11 +307,11 @@ def calculate_signals():
         else:
             GCMs, per_RCM = None, True
         ds_ref = calculate_mean(
-            experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs
+            experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs, time_aggregation
         )
         ds_ref.to_netcdf(
-            "../output/" + experiment_family.lower() + "_mean_historical.nc"
-        )  # save mean historical  todo change to include monthly
+            out_path + experiment_family.lower() + "_mean_historical.nc"
+        )  # save mean historical
         update_identifier(ds_ref, "historical")
         for experiment_id in ["rcp85", "rcp45", "rcp26"]:
             if experiment_family == "CMIP5":
@@ -314,12 +320,12 @@ def calculate_signals():
                 experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
             )
             ds_future.to_netcdf(
-                "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
-            )  # save mean future todo change to include monthly
+                out_path + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
+            )  # save mean future
             update_identifier(ds_future, experiment_id)
 
             # calculate and save difference
             diff = ds_future - ds_ref
             diff.to_netcdf(
-                "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
-            )  # todo change to include monthly
+                out_path + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+            )
