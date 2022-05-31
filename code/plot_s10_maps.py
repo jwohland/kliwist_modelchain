@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cf
 import xarray as xr
-from numpy import unique
+from numpy import unique, linspace
 from pandas import MultiIndex
 import xesmf as xe
 
@@ -442,7 +442,69 @@ def make_CORDEX_vs_CMIP5_plots():
     plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
 
 
+def make_aggregate_monthly_plots():
+    """
+    creates 3x12 subplots where
+    - each row is a month
+    - each column is a scenario
+    Plotted values are changes in the monthly mean future minus historical
+    :return:
+    """
+    for experiment_family in ["CORDEX", "CMIP5"]:
+        f, axs = plt.subplots(ncols=3, nrows=12, figsize=(6, 18), **SUBPLOT_KW)
+        plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
+        cbar_ax = f.add_axes([0.1, 0.06, 0.8, 0.01])
+        plot_params = {"x": "lon", "y": "lat", "extend": "both"}
+        levels = linspace(-1.75, 1.75, 8)
+        for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
+            diff = xr.open_dataset(
+                "../output/monthly/"
+                + experiment_family.lower()
+                + "_diff_"
+                + experiment_id
+                + ".nc"
+            )
+            for i_month, month in enumerate(range(1, 13)):
+                if i_month + i_col == 0:
+                    # plot with colorbar
+                    diff.sel(month=month).mean(dim="identifier")["sfcWind"].squeeze().plot(
+                        ax=axs[i_month, i_col],
+                        levels=levels,
+                        cmap=plt.get_cmap("coolwarm"),
+                        cbar_kwargs={
+                            "label": experiment_family + " wind speed change [m/s]",
+                            "orientation": "horizontal",
+                        },
+                        cbar_ax=cbar_ax,
+                        **plot_params
+                    )
+                else:
+                    # plot without colorbar
+                    diff.sel(month=month).mean(dim="identifier")["sfcWind"].squeeze().plot(
+                        ax=axs[i_month, i_col],
+                        levels=levels,
+                        cmap=plt.get_cmap("coolwarm"),
+                        add_colorbar=False,
+                        **plot_params
+                    )
+
+                add_coast_boarders(axs[i_month, i_col])
+                axs[i_month, 0].text(
+                    -0.15,
+                    .5,
+                    str(month),
+                    transform=axs[i_month, 0].transAxes,
+                    weight="bold",
+                    **TEXT_PARAMS
+                )
+                axs[i_month, i_col].set_title("")
+            axs[0, i_col].set_title(experiment_id)
+
+        plt.savefig("../plots/aggregate/" + experiment_family + "diff_windchange_mean_monthly.png", **FIG_PARAMS)
+
+
 def make_s10_maps():
     make_individual_plots()
     make_aggregate_plots()
     make_CORDEX_vs_CMIP5_plots()
+    make_aggregate_monthly_plots()
