@@ -40,7 +40,7 @@ def load_CMIP5():
     CMIP5_list = []
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         diff = (
-            xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
+            xr.open_dataset("../output/sfcWind/cmip5_diff_" + experiment_id + ".nc")
             .mean(dim="identifier")
             .squeeze()
         )

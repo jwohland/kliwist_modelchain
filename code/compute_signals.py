@@ -312,8 +312,8 @@ def calculate_mean(
     return ds
 
 
-def calculate_signals(time_aggregation="annual"):
-    out_path = "../output/"
+def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
+    out_path = "../output/" + variable_id +"/"
     if time_aggregation == "monthly":
         out_path += "monthly/"
     for experiment_family in ["CORDEX", "CMIP5"]:
@@ -324,7 +324,7 @@ def calculate_signals(time_aggregation="annual"):
             GCMs, per_RCM = None, True
         ds_ref = calculate_mean(
             experiment_family,
-            "sfcWind",
+            variable_id,
             "mon",
             "EUR-11",
             "historical",
@@ -341,7 +341,7 @@ def calculate_signals(time_aggregation="annual"):
                 GCMs = get_gcm_list(experiment_id)
             ds_future = calculate_mean(
                 experiment_family,
-                "sfcWind",
+                variable_id,
                 "mon",
                 "EUR-11",
                 experiment_id,

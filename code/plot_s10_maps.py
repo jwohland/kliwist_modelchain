@@ -269,13 +269,13 @@ def make_individual_plots():
     ### Individual plots of all models ###
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         # CORDEX
-        diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
+        diff = xr.open_dataset("../output/sfcWind/cordex_diff_" + experiment_id + ".nc")
         plot_array(diff)
         plt.savefig(
             "../plots/cordex_windchange_" + experiment_id + ".png", **FIG_PARAMS
         )
         # CMIP5
-        diff = xr.open_dataset("../output/cmip5_diff_" + experiment_id + ".nc")
+        diff = xr.open_dataset("../output/sfcWind/cmip5_diff_" + experiment_id + ".nc")
         plot_array_CMIP5(diff)
         plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
 
@@ -296,7 +296,7 @@ def make_aggregate_plots():
         },  # number of GCM with >1 downscaling RCM
     }
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
-        diff = xr.open_dataset("../output/cordex_diff_" + experiment_id + ".nc")
+        diff = xr.open_dataset("../output/sfcWind/cordex_diff_" + experiment_id + ".nc")
         ds = reindex_per_model(diff)
         for aggregate_dimension in ["RCM", "GCM"]:
             if aggregate_dimension == "RCM":  # RCMs per row as in matrix plot
@@ -344,7 +344,7 @@ def make_aggregate_plots():
     for experiment_family in ["CORDEX", "CMIP5"]:
         for experiment_id in ["rcp26", "rcp45", "rcp85"]:
             diff = xr.open_dataset(
-                "../output/"
+                "../output/sfcWind/"
                 + experiment_family.lower()
                 + "_diff_"
                 + experiment_id
@@ -417,10 +417,10 @@ def make_CORDEX_vs_CMIP5_plots():
     for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
         # open data
         diff_cordex = xr.open_dataset(
-            "../output/cordex_diff_" + experiment_id + ".nc"
+            "../output/sfcWind/cordex_diff_" + experiment_id + ".nc"
         ).mean(dim="identifier")
         diff_cmip5 = xr.open_dataset(
-            "../output/cmip5_diff_" + experiment_id + ".nc"
+            "../output/sfcWind/cmip5_diff_" + experiment_id + ".nc"
         ).mean(dim="identifier")
         # regrid CORDEX to CMIP5 grid
         regridder = xe.Regridder(diff_cordex, diff_cmip5, "bilinear", periodic=True)
@@ -458,7 +458,7 @@ def make_aggregate_monthly_plots():
         levels = linspace(-1.75, 1.75, 8)
         for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             diff = xr.open_dataset(
-                "../output/monthly/"
+                "../output/sfcWind/monthly/"
                 + experiment_family.lower()
                 + "_diff_"
                 + experiment_id

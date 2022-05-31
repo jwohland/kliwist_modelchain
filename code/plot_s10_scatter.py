@@ -70,7 +70,7 @@ def make_s10_scatter(onshore=True):
             experiments = ["historical", "rcp26", "rcp45", "rcp85"]
         for experiment_id in experiments:
             name = metric + "_" + experiment_id
-            path = "../output/country_aggregates/"
+            path = "../output/sfcWind/country_aggregates/"
             if onshore:
                 relevant_countries = COUNTRIES
             else:

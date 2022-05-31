@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def make_s10_heatmaps(onshore):
     metric = "diff"
     df_list = []
-    path_to_data = "../output/country_aggregates/"
+    path_to_data = "../output/sfcWind/country_aggregates/"
     if not onshore:
         path_to_data += "offshore/"
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
