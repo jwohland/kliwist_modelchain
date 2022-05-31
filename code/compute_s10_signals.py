@@ -183,33 +183,29 @@ def preprocess_cordex_dataset(ds, identifier):
         ds = ds.drop_dims(["x", "y"], errors="ignore")
     else:
         ds = preproc.replace_coords(ds)
-    ds = (
-        ds.drop(
-            [
-                "time_bnds",
-                "bnds",
-                "rotated_pole",
-                "bounds_lon",
-                "bounds_lat",
-                "time_bounds",
-                "Lambert_Conformal",
-                "height",
-                "rotated_latitude_longitude",
-                "lat_vertices",
-                "lon_vertices",
-            ],
-            errors="ignore",
-        )
-        .assign_coords({"identifier": identifier})
-    )
+    ds = ds.drop(
+        [
+            "time_bnds",
+            "bnds",
+            "rotated_pole",
+            "bounds_lon",
+            "bounds_lat",
+            "time_bounds",
+            "Lambert_Conformal",
+            "height",
+            "rotated_latitude_longitude",
+            "lat_vertices",
+            "lon_vertices",
+        ],
+        errors="ignore",
+    ).assign_coords({"identifier": identifier})
     return ds
 
 
 def preprocess_cmip_dataset(ds, identifier):
-    ds = (
-        ds.drop(["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore")
-        .assign_coords({"identifier": identifier})
-    )
+    ds = ds.drop(
+        ["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore"
+    ).assign_coords({"identifier": identifier})
     ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
     ds = ds.assign_attrs(
         ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
@@ -217,7 +213,33 @@ def preprocess_cmip_dataset(ds, identifier):
     return ds
 
 
-def dictionary_to_dataset(data_dict, experiment_family):
+def aggregate_temporally(ds, experiment_id, time_aggregation):
+    """
+    Aggregates the time dimension from input resolution to resolution specified in time_aggretation.
+    Also selects the period based on experiment_id
+    :param ds:
+    :param experiment_id:
+    :param time_aggregation:
+    :return:
+    """
+    assert time_aggregation in [
+        "annual",
+        "monthly",
+    ]  # monthly and annual resampling supported
+    if experiment_id == "historical":
+        years = slice("1985", "2005")
+    else:
+        years = slice("2080", "2100")
+    if time_aggregation == "annual":
+        ds = ds.sel(time=years).mean("time")
+    elif time_aggregation == "monthly":
+        ds = ds.sel(time=years).groupby("time.month").mean("time")
+    return ds
+
+
+def dictionary_to_dataset(
+    data_dict, experiment_family, experiment_id, time_aggregation
+):
     """
     takes dictionary with keys of the form
 
@@ -241,7 +263,11 @@ def dictionary_to_dataset(data_dict, experiment_family):
             preprocess_cmip_dataset(data_dict[identifier], identifier)
             for identifier in data_dict.keys()
         ]
-    list_ds = [el for el in list_ds if el]  # remove None
+    # aggregate temporally
+    list_ds = [
+        aggregate_temporally(ds, experiment_id, time_aggregation) for ds in list_ds
+    ]
+    list_ds = [ds for ds in list_ds if ds]  # remove None
     if experiment_family.lower() == "cmip5":
         # regrid all CMIP5 results to grid of first model
         import xesmf as xe
@@ -273,7 +299,6 @@ def calculate_mean(
     GCMs=None,
     time_aggregation="annual",
 ):
-    assert time_aggregation in ["annual", "monthly"]  # monthly and annual resampling supported
 
     ds_dict = get_dataset_dictionary(
         experiment_family,
@@ -284,17 +309,11 @@ def calculate_mean(
         per_RCM,
         GCMs=GCMs,
     )
-    ds = dictionary_to_dataset(ds_dict, experiment_family)
-    # aggregate temporally
-    if experiment_id == "historical":
-        years = slice("1985", "2005")
-    else:
-        years = slice("2080", "2100")
-    if time_aggregation == "annual":
-        ds = ds.sel(time=years).mean("time")
-    elif time_aggregation == "monthly":
-        ds = ds.sel(time=years).groupby("time.month").mean("time")
+    ds = dictionary_to_dataset(
+        ds_dict, experiment_family, experiment_id, time_aggregation
+    )
     return ds
+
 
 def calculate_signals(time_aggregation="annual"):
     out_path = "../output/"
@@ -307,7 +326,14 @@ def calculate_signals(time_aggregation="annual"):
         else:
             GCMs, per_RCM = None, True
         ds_ref = calculate_mean(
-            experiment_family, "sfcWind", "mon", "EUR-11", "historical", per_RCM, GCMs, time_aggregation
+            experiment_family,
+            "sfcWind",
+            "mon",
+            "EUR-11",
+            "historical",
+            per_RCM,
+            GCMs,
+            time_aggregation,
         )
         ds_ref.to_netcdf(
             out_path + experiment_family.lower() + "_mean_historical.nc"
@@ -317,7 +343,13 @@ def calculate_signals(time_aggregation="annual"):
             if experiment_family == "CMIP5":
                 GCMs = get_gcm_list(experiment_id)
             ds_future = calculate_mean(
-                experiment_family, "sfcWind", "mon", "EUR-11", experiment_id, per_RCM, GCMs
+                experiment_family,
+                "sfcWind",
+                "mon",
+                "EUR-11",
+                experiment_id,
+                per_RCM,
+                GCMs,
             )
             ds_future.to_netcdf(
                 out_path + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
