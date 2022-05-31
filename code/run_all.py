@@ -22,7 +22,7 @@ Plots
 plot_s10_maps.make_s10_maps()
 # Scatter plots of wind change per country
 plot_s10_scatter.make_s10_scatter(onshore=True)
-plot_s10_scatter.make_s10_scatter(onshore=True)
+plot_s10_scatter.make_s10_scatter(onshore=False)
 # Heatmaps of wind per country
 plot_s10_country_heatmaps.make_s10_heatmaps(onshore=True)
 plot_s10_country_heatmaps.make_s10_heatmaps(onshore=False)
