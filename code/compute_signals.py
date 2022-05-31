@@ -178,8 +178,11 @@ def preprocess_cordex_dataset(ds, identifier):
         ds = preproc.remap_lambert_conformal(ds, domain="EUR-11")
         print(identifier + " does not use rotated coordinates and is remapped")
         ds = ds.drop_dims(["x", "y"], errors="ignore")
-    else:
+    elif (ds["rlat"].size == 412) & (ds["rlon"].size == 424):
         ds = preproc.replace_coords(ds)
+    else:
+        print("Grid not understood " + identifier)
+        return None
     ds = ds.drop(
         [
             "time_bnds",
