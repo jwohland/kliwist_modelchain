@@ -200,7 +200,7 @@ def preprocess_cordex_dataset(ds, identifier):
             ],
             errors="ignore",
         )
-        .groupby("time.year")
+        .groupby("time.year")  # todo change to monthly
         .mean("time")
         .assign_coords({"identifier": identifier})
     )
@@ -211,7 +211,7 @@ def preprocess_cmip_dataset(ds, identifier):
     ds = (
         ds.drop(["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore")
         .assign_coords({"identifier": identifier})
-        .groupby("time.year")
+        .groupby("time.year")  # todo change to monthly
         .mean("time")
     )
     ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
@@ -290,7 +290,7 @@ def calculate_mean(
         years = slice("1985", "2005")
     else:
         years = slice("2080", "2100")
-    ds = ds.sel(year=years).mean("year")
+    ds = ds.sel(year=years).mean("year")  # todo can this stay as is for monthly?
     return ds
 
 def calculate_signals():
@@ -305,7 +305,7 @@ def calculate_signals():
         )
         ds_ref.to_netcdf(
             "../output/" + experiment_family.lower() + "_mean_historical.nc"
-        )  # save mean historical
+        )  # save mean historical  todo change to include monthly
         update_identifier(ds_ref, "historical")
         for experiment_id in ["rcp85", "rcp45", "rcp26"]:
             if experiment_family == "CMIP5":
@@ -315,11 +315,11 @@ def calculate_signals():
             )
             ds_future.to_netcdf(
                 "../output/" + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
-            )  # save mean future
+            )  # save mean future todo change to include monthly
             update_identifier(ds_future, experiment_id)
 
             # calculate and save difference
             diff = ds_future - ds_ref
             diff.to_netcdf(
                 "../output/" + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
-            )
+            )  # todo change to include monthly
