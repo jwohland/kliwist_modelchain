@@ -1,9 +1,6 @@
 import intake
-from dask.distributed import Client
 import xarray as xr
 from cordex import preprocessing as preproc
-
-client = Client()  # start dask client
 
 
 def get_gcm_list(experiment_id):
