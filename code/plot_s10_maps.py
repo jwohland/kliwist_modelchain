@@ -452,7 +452,7 @@ def make_aggregate_monthly_plots():
     """
     for experiment_family in ["CORDEX", "CMIP5"]:
         f, axs = plt.subplots(ncols=3, nrows=12, figsize=(6, 18), **SUBPLOT_KW)
-        plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
+        plt.subplots_adjust(0.05, 0.1, 0.97, 0.97, hspace=0.05, wspace=0.05)
         cbar_ax = f.add_axes([0.1, 0.06, 0.8, 0.01])
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
         levels = linspace(-1.75, 1.75, 8)
@@ -500,7 +500,7 @@ def make_aggregate_monthly_plots():
                 axs[i_month, i_col].set_title("")
             axs[0, i_col].set_title(experiment_id)
 
-        plt.savefig("../plots/aggregate/" + experiment_family + "diff_windchange_mean_monthly.png", **FIG_PARAMS)
+        plt.savefig("../plots/aggregate/" + experiment_family + "_diff_windchange_mean_monthly.png", **FIG_PARAMS)
 
 
 def make_s10_maps():
