@@ -456,7 +456,7 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
         cbar_ax = f.add_axes([0.1, 0.06, 0.8, 0.01])
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
         if variable_id == "sfcWind":
-            levels = linspace(-0.9, 0.9, 11)
+            levels = linspace(-0.9, 0.9, 10)
         elif variable_id in ["tas", "ts"]:
             levels = linspace(-5, 5, 11)
         elif variable_id == "sic":
