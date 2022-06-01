@@ -459,7 +459,7 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
             levels = linspace(-0.9, 0.9, 10)
         elif variable_id in ["tas", "ts"]:
             levels = linspace(-5, 5, 11)
-        elif variable_id == "sic":
+        elif variable_id in ["sic", "tas-ts"]:
             levels = linspace(-1, 1, 11)
         for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             diff = xr.open_dataset(
