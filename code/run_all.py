@@ -12,6 +12,10 @@ Calculations
 # Compute changes in 10m wind speeds
 compute_signals.calculate_signals(time_aggregation="annual", variable_id="sfcWind")
 compute_signals.calculate_signals(time_aggregation="monthly", variable_id="sfcWind")
+# compute changes in near-surface air temperature (tas), skin temperature (ts) and sea ice cover (sic)  todo check that sic is really sea ice cover
+for variable in ["tas", "ts", "sic"]:
+    print(variable)
+    compute_signals.calculate_signals(time_aggregation="monthly", variable_id=variable)
 # Compute country aggregates
 compute_country_aggregates.compute_all(onshore=True)  # onshore
 compute_country_aggregates.compute_all(onshore=False)  #offshore

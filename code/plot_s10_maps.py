@@ -442,7 +442,7 @@ def make_CORDEX_vs_CMIP5_plots():
     plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
 
 
-def make_aggregate_monthly_plots():
+def make_aggregate_monthly_plots(variable_id="sfcWind"):
     """
     creates 3x12 subplots where
     - each row is a month
@@ -458,7 +458,9 @@ def make_aggregate_monthly_plots():
         levels = linspace(-1.75, 1.75, 8)
         for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             diff = xr.open_dataset(
-                "../output/sfcWind/monthly/"
+                "../output/"
+                + variable_id
+                + "/monthly/"
                 + experiment_family.lower()
                 + "_diff_"
                 + experiment_id
@@ -467,12 +469,17 @@ def make_aggregate_monthly_plots():
             for i_month, month in enumerate(range(1, 13)):
                 if i_month + i_col == 0:
                     # plot with colorbar
-                    diff.sel(month=month).mean(dim="identifier")["sfcWind"].squeeze().plot(
+                    diff.sel(month=month).mean(dim="identifier")[
+                        variable_id
+                    ].squeeze().plot(
                         ax=axs[i_month, i_col],
                         levels=levels,
                         cmap=plt.get_cmap("coolwarm"),
                         cbar_kwargs={
-                            "label": experiment_family + " wind speed change [m/s]",
+                            "label": experiment_family
+                            + " "
+                            + variable_id
+                            + "  change",  # todo add units later
                             "orientation": "horizontal",
                         },
                         cbar_ax=cbar_ax,
@@ -480,7 +487,9 @@ def make_aggregate_monthly_plots():
                     )
                 else:
                     # plot without colorbar
-                    diff.sel(month=month).mean(dim="identifier")["sfcWind"].squeeze().plot(
+                    diff.sel(month=month).mean(dim="identifier")[
+                        variable_id
+                    ].squeeze().plot(
                         ax=axs[i_month, i_col],
                         levels=levels,
                         cmap=plt.get_cmap("coolwarm"),
@@ -491,7 +500,7 @@ def make_aggregate_monthly_plots():
                 add_coast_boarders(axs[i_month, i_col])
                 axs[i_month, 0].text(
                     -0.15,
-                    .5,
+                    0.5,
                     str(month),
                     transform=axs[i_month, 0].transAxes,
                     weight="bold",
@@ -500,7 +509,14 @@ def make_aggregate_monthly_plots():
                 axs[i_month, i_col].set_title("")
             axs[0, i_col].set_title(experiment_id)
 
-        plt.savefig("../plots/aggregate/" + experiment_family + "_diff_windchange_mean_monthly.png", **FIG_PARAMS)
+        plt.savefig(
+            "../plots/aggregate/"
+            + experiment_family
+            + "_diff_"
+            + variable_id
+            + "change_mean_monthly.png",
+            **FIG_PARAMS
+        )
 
 
 def make_s10_maps():
@@ -508,3 +524,6 @@ def make_s10_maps():
     make_aggregate_plots()
     make_CORDEX_vs_CMIP5_plots()
     make_aggregate_monthly_plots()
+    for variable in ["tas", "ts", "sic"]:  # todo currently has to fail towards the end because sic CMIP data not available
+        make_aggregate_monthly_plots(variable)
+
