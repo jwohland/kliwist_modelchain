@@ -1,3 +1,5 @@
+import warnings
+
 import intake
 import xarray as xr
 from cordex import preprocessing as preproc
@@ -121,11 +123,13 @@ def get_dataset_dictionary(
             ds_dict = {}
             for RCM in RCMs:
                 try:
-                    ds_dict.update(
-                        subset.search(model_id=RCM).to_dataset_dict(
-                            preprocess=preproc.rename_cordex,
-                            cdf_kwargs={"use_cftime": True, "chunks": {}},
-                        )
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")  # can be safely ignored here because model will be output
+                        ds_dict.update(
+                            subset.search(model_id=RCM).to_dataset_dict(
+                                preprocess=preproc.rename_cordex,
+                                cdf_kwargs={"use_cftime": True, "chunks": {}},
+                            )
                     )
                 except:
                     print(RCM + " has a problem")
