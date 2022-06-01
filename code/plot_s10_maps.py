@@ -456,11 +456,11 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
         cbar_ax = f.add_axes([0.1, 0.06, 0.8, 0.01])
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
         if variable_id == "sfcWind":
-            levels = linspace(-1.75, 1.75, 8)
+            levels = linspace(-0.9, 0.9, 11)
         elif variable_id in ["tas", "ts"]:
             levels = linspace(-5, 5, 11)
         elif variable_id == "sic":
-            levels = linspace(-1,1,11)
+            levels = linspace(-1, 1, 11)
         for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             diff = xr.open_dataset(
                 "../output/"
@@ -529,6 +529,9 @@ def make_s10_maps():
     make_aggregate_plots()
     make_CORDEX_vs_CMIP5_plots()
     make_aggregate_monthly_plots()
-    for variable in ["tas", "ts", "sic"]:  # todo currently has to fail towards the end because sic CMIP data not available
+    for variable in [
+        "tas",
+        "ts",
+        "sic",
+    ]:  # todo currently has to fail towards the end because sic CMIP data not available
         make_aggregate_monthly_plots(variable)
-
