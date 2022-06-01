@@ -455,7 +455,12 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
         plt.subplots_adjust(0.05, 0.1, 0.97, 0.97, hspace=0.05, wspace=0.05)
         cbar_ax = f.add_axes([0.1, 0.06, 0.8, 0.01])
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
-        levels = linspace(-1.75, 1.75, 8)
+        if variable_id == "sfcWind":
+            levels = linspace(-1.75, 1.75, 8)
+        elif variable_id in ["tas", "ts"]:
+            levels = linspace(-5, 5, 11)
+        elif variable_id == "sic":
+            levels = linspace(-1,1,11)
         for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             diff = xr.open_dataset(
                 "../output/"
