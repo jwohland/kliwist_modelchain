@@ -124,13 +124,15 @@ def get_dataset_dictionary(
             for RCM in RCMs:
                 try:
                     with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")  # can be safely ignored here because model will be output
+                        warnings.simplefilter(
+                            "ignore"
+                        )  # can be safely ignored here because model will be output
                         ds_dict.update(
                             subset.search(model_id=RCM).to_dataset_dict(
                                 preprocess=preproc.rename_cordex,
                                 cdf_kwargs={"use_cftime": True, "chunks": {}},
                             )
-                    )
+                        )
                 except:
                     print(RCM + " has a problem")
         else:
@@ -372,4 +374,33 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
             diff = ds_future - ds_ref
             diff.to_netcdf(
                 out_path + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
+            )
+
+
+def compute_monthly_stability_change():
+    for experiment_family in ["CORDEX", "CMIP5"]:
+        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
+            ds_tas_change = xr.open_dataset(
+                "../output/tas/monthly/"
+                + experiment_family.lower()
+                + "_diff_"
+                + experiment_id
+                + ".nc"
+            )
+            ds_ts_change = xr.open_dataset(
+                "../output/ts/monthly/"
+                + experiment_family.lower()
+                + "_diff_"
+                + experiment_id
+                + ".nc"
+            )
+            ds_stability_change = (
+                ds_tas_change["tas"] - ds_ts_change["ts"]
+            ).to_dataset(name="tas-ts")
+            ds_stability_change.to_netcdf(
+                "../output/tas-ts/monthly/"
+                + experiment_family.lower()
+                + "_diff_"
+                + experiment_id
+                + ".nc"
             )

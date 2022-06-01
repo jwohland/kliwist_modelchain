@@ -16,6 +16,8 @@ compute_signals.calculate_signals(time_aggregation="monthly", variable_id="sfcWi
 for variable in ["tas", "ts", "sic"]:
     print(variable)
     compute_signals.calculate_signals(time_aggregation="monthly", variable_id=variable)
+# compute changes in tas - ts, a proxy for stability change
+compute_signals.compute_monthly_stability_change()
 # Compute country aggregates
 compute_country_aggregates.compute_all(onshore=True)  # onshore
 compute_country_aggregates.compute_all(onshore=False)  #offshore
