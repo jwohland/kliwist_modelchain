@@ -357,6 +357,7 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
                 experiment_id,
                 per_RCM,
                 GCMs,
+                time_aggregation,
             )
             ds_future.to_netcdf(
                 out_path + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
