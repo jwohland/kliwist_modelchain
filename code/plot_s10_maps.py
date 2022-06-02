@@ -474,7 +474,7 @@ def make_aggregate_monthly_plots(
                 + "_"
                 + method
                 + "_"
-                + +experiment_id
+                + experiment_id
                 + ".nc"
             )
             for i_month, month in enumerate(range(1, 13)):
