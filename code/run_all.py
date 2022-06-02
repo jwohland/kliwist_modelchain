@@ -1,6 +1,6 @@
 # Execute the entire analysis and make all plots
 import compute_country_aggregates
-import compute_s10_signals
+import compute_signals
 import plot_lu_maps
 import plot_s10_maps
 import plot_s10_scatter
@@ -10,8 +10,14 @@ import analyze_LUCAS_profiles
 Calculations
 """
 # Compute changes in 10m wind speeds
-compute_s10_signals.calculate_signals(time_aggregation="annual")
-compute_s10_signals.calculate_signals(time_aggregation="monthly")
+compute_signals.calculate_signals(time_aggregation="annual", variable_id="sfcWind")
+compute_signals.calculate_signals(time_aggregation="monthly", variable_id="sfcWind")
+# compute changes in near-surface air temperature (tas), skin temperature (ts) and sea ice cover (sic)  todo check that sic is really sea ice cover
+for variable in ["tas", "ts", "sic"]:
+    print(variable)
+    compute_signals.calculate_signals(time_aggregation="monthly", variable_id=variable)
+# compute changes in tas - ts, a proxy for stability change
+compute_signals.compute_monthly_stability_change()
 # Compute country aggregates
 compute_country_aggregates.compute_all(onshore=True)  # onshore
 compute_country_aggregates.compute_all(onshore=False)  #offshore

@@ -1,3 +1,5 @@
+import warnings
+
 import intake
 import xarray as xr
 from cordex import preprocessing as preproc
@@ -121,12 +123,16 @@ def get_dataset_dictionary(
             ds_dict = {}
             for RCM in RCMs:
                 try:
-                    ds_dict.update(
-                        subset.search(model_id=RCM).to_dataset_dict(
-                            preprocess=preproc.rename_cordex,
-                            cdf_kwargs={"use_cftime": True, "chunks": {}},
+                    with warnings.catch_warnings():
+                        warnings.simplefilter(
+                            "ignore"
+                        )  # can be safely ignored here because model will be output
+                        ds_dict.update(
+                            subset.search(model_id=RCM).to_dataset_dict(
+                                preprocess=preproc.rename_cordex,
+                                cdf_kwargs={"use_cftime": True, "chunks": {}},
+                            )
                         )
-                    )
                 except:
                     print(RCM + " has a problem")
         else:
@@ -178,8 +184,11 @@ def preprocess_cordex_dataset(ds, identifier):
         ds = preproc.remap_lambert_conformal(ds, domain="EUR-11")
         print(identifier + " does not use rotated coordinates and is remapped")
         ds = ds.drop_dims(["x", "y"], errors="ignore")
-    else:
+    elif (ds["rlat"].size == 412) & (ds["rlon"].size == 424):
         ds = preproc.replace_coords(ds)
+    else:
+        print("Grid not understood " + identifier)
+        return None
     ds = ds.drop(
         [
             "time_bnds",
@@ -306,14 +315,21 @@ def calculate_mean(
         per_RCM,
         GCMs=GCMs,
     )
+    # manual fixes for some datasets
+    # ICHEC-EC-EARTH throws a key Error for tas. Remove manually for now.
+    try:
+        del ds_dict["ICHEC.EC-EARTH.historical.Amon"]
+    except:
+        """"""
+
     ds = dictionary_to_dataset(
         ds_dict, experiment_family, experiment_id, time_aggregation
     )
     return ds
 
 
-def calculate_signals(time_aggregation="annual"):
-    out_path = "../output/"
+def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
+    out_path = "../output/" + variable_id + "/"
     if time_aggregation == "monthly":
         out_path += "monthly/"
     for experiment_family in ["CORDEX", "CMIP5"]:
@@ -324,7 +340,7 @@ def calculate_signals(time_aggregation="annual"):
             GCMs, per_RCM = None, True
         ds_ref = calculate_mean(
             experiment_family,
-            "sfcWind",
+            variable_id,
             "mon",
             "EUR-11",
             "historical",
@@ -341,12 +357,13 @@ def calculate_signals(time_aggregation="annual"):
                 GCMs = get_gcm_list(experiment_id)
             ds_future = calculate_mean(
                 experiment_family,
-                "sfcWind",
+                variable_id,
                 "mon",
                 "EUR-11",
                 experiment_id,
                 per_RCM,
                 GCMs,
+                time_aggregation,
             )
             ds_future.to_netcdf(
                 out_path + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
@@ -358,3 +375,40 @@ def calculate_signals(time_aggregation="annual"):
             diff.to_netcdf(
                 out_path + experiment_family.lower() + "_diff_" + experiment_id + ".nc"
             )
+
+
+def compute_monthly_stability_change():
+    for experiment_family in ["CORDEX", "CMIP5"]:
+        for method in ["mean", "diff"]:
+            experiment_ids = ["rcp85", "rcp45", "rcp26"]
+            if method == "mean":
+                experiment_ids.append("historical")
+            for experiment_id in experiment_ids:
+                ds_tas = xr.open_dataset(
+                    "../output/tas/monthly/"
+                    + experiment_family.lower()
+                    + "_"
+                    + method
+                    + "_"
+                    + experiment_id
+                    + ".nc"
+                )
+                ds_ts = xr.open_dataset(
+                    "../output/ts/monthly/"
+                    + experiment_family.lower()
+                    + "_"
+                    + method
+                    + "_"
+                    + experiment_id
+                    + ".nc"
+                )
+                ds_stability = (ds_tas["tas"] - ds_ts["ts"]).to_dataset(name="tas-ts")
+                ds_stability.to_netcdf(
+                    "../output/tas-ts/monthly/"
+                    + experiment_family.lower()
+                    + "_"
+                    + method
+                    + "_"
+                    + experiment_id
+                    + ".nc"
+                )

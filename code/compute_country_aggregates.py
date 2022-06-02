@@ -115,13 +115,13 @@ def compute_all(onshore):
                     name = (
                         experiment_family.lower() + "_" + metric + "_" + experiment_id
                     )
-                    diff = xr.open_dataset("../output/" + name + ".nc").squeeze()
+                    diff = xr.open_dataset("../output/sfcWind/" + name + ".nc").squeeze()
                     diff_agg = calculate_aggregate(diff, experiment_family, onshore)
                     if onshore:
                         diff_agg.to_netcdf(
-                            "../output/country_aggregates/country_" + name + ".nc"
+                            "../output/sfcWind/country_aggregates/country_" + name + ".nc"
                         )
                     else:
                         diff_agg.to_netcdf(
-                            "../output/country_aggregates/offshore/country_" + name + ".nc"
+                            "../output/sfcWind/country_aggregates/offshore/country_" + name + ".nc"
                         )
