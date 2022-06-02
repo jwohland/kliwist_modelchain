@@ -464,7 +464,7 @@ def make_aggregate_monthly_plots(
         elif variable_id in ["sic", "tas-ts"]:
             levels = linspace(-1, 1, 11)
         if (variable_id == "tas-ts") & (method == "mean"):
-            levels = linspace(-10, 10, 11)
+            levels = linspace(-3, 3, 13)
         for i_col, experiment_id in enumerate(experiment_ids):
             diff = xr.open_dataset(
                 "../output/"
