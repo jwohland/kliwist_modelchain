@@ -379,28 +379,36 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
 
 def compute_monthly_stability_change():
     for experiment_family in ["CORDEX", "CMIP5"]:
-        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
-            ds_tas_change = xr.open_dataset(
-                "../output/tas/monthly/"
-                + experiment_family.lower()
-                + "_diff_"
-                + experiment_id
-                + ".nc"
-            )
-            ds_ts_change = xr.open_dataset(
-                "../output/ts/monthly/"
-                + experiment_family.lower()
-                + "_diff_"
-                + experiment_id
-                + ".nc"
-            )
-            ds_stability_change = (
-                ds_tas_change["tas"] - ds_ts_change["ts"]
-            ).to_dataset(name="tas-ts")
-            ds_stability_change.to_netcdf(
-                "../output/tas-ts/monthly/"
-                + experiment_family.lower()
-                + "_diff_"
-                + experiment_id
-                + ".nc"
-            )
+        for method in ["mean", "diff"]:
+            experiment_ids = ["rcp85", "rcp45", "rcp26"]
+            if method == "mean":
+                experiment_ids.append("historical")
+            for experiment_id in experiment_ids:
+                ds_tas = xr.open_dataset(
+                    "../output/tas/monthly/"
+                    + experiment_family.lower()
+                    + "_"
+                    + method
+                    + "_"
+                    + experiment_id
+                    + ".nc"
+                )
+                ds_ts = xr.open_dataset(
+                    "../output/ts/monthly/"
+                    + experiment_family.lower()
+                    + "_"
+                    + method
+                    + "_"
+                    + experiment_id
+                    + ".nc"
+                )
+                ds_stability = (ds_tas["tas"] - ds_ts["ts"]).to_dataset(name="tas-ts")
+                ds_stability.to_netcdf(
+                    "../output/tas-ts/monthly/"
+                    + experiment_family.lower()
+                    + "_"
+                    + method
+                    + "_"
+                    + experiment_id
+                    + ".nc"
+                )
