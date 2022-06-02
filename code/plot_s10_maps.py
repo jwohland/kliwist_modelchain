@@ -442,7 +442,9 @@ def make_CORDEX_vs_CMIP5_plots():
     plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
 
 
-def make_aggregate_monthly_plots(variable_id="sfcWind"):
+def make_aggregate_monthly_plots(
+    variable_id="sfcWind", method="diff", experiment_ids=["rcp26", "rcp45", "rcp85"]
+):
     """
     creates 3x12 subplots where
     - each row is a month
@@ -461,14 +463,18 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
             levels = linspace(-5, 5, 11)
         elif variable_id in ["sic", "tas-ts"]:
             levels = linspace(-1, 1, 11)
-        for i_col, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
+        if (variable_id == "tas-ts") & (method == "mean"):
+            levels = linspace(-10, 10, 11)
+        for i_col, experiment_id in enumerate(experiment_ids):
             diff = xr.open_dataset(
                 "../output/"
                 + variable_id
                 + "/monthly/"
                 + experiment_family.lower()
-                + "_diff_"
-                + experiment_id
+                + "_"
+                + method
+                + "_"
+                + +experiment_id
                 + ".nc"
             )
             for i_month, month in enumerate(range(1, 13)):
@@ -484,7 +490,8 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
                             "label": experiment_family
                             + " "
                             + variable_id
-                            + "  change",  # todo add units later
+                            + " "
+                            + method,  # todo add units later
                             "orientation": "horizontal",
                         },
                         cbar_ax=cbar_ax,
@@ -517,7 +524,9 @@ def make_aggregate_monthly_plots(variable_id="sfcWind"):
         plt.savefig(
             "../plots/aggregate/"
             + experiment_family
-            + "_diff_"
+            + "_"
+            + method
+            + "_"
             + variable_id
             + "change_mean_monthly.png",
             **FIG_PARAMS
@@ -532,6 +541,8 @@ def make_s10_maps():
     for variable in [
         "tas",
         "ts",
+        "tas-ts",
         "sic",
     ]:  # todo currently has to fail towards the end because sic CMIP data not available
         make_aggregate_monthly_plots(variable)
+    make_aggregate_monthly_plots("tas-ts", "mean", "historical")
