@@ -90,11 +90,13 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method):
         delta_gradient = gradient_ds["tas"].mean(dim="experiments")
         slope_proxy = delta_wind / delta_gradient
         label = "Wind change per gradient change proxy  [m/s /K]"
+        levels = np.linspace(-0.1, 0.1, 11)
     elif method == "extreme":
         # B) based on extreme cases
         strongest_change = gradient_ds["tas"].argmin()  # minimum is correct because gradient change negative
         slope_proxy = wind_ds["sfcWind"].sel(experiments=strongest_change)
         label = "Wind change in max gradient change experiment [m/s]"
+        levels = np.linspace(-1, 1, 11)
     #elif method == "regression":
     #    print("Not implemented yet")
     #    fit = xr.polyfit(wind_ds["sfcWind"], gradient_ds["tas"], dim="experiments")
@@ -103,7 +105,7 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method):
         f, ax = prepare_figure(scope)
         slope_proxy.plot(
             ax=ax,
-            levels=np.linspace(-0.1, 0.1, 11),
+            levels=levels,
             extend="both",
             cbar_kwargs={
                 "label": label,
@@ -171,19 +173,21 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
         [".".join(x.split(".")[:2]) for x in wind_df.index], name="identifier"
     )
     df = pd.merge(tas_df, wind_df, on=["identifier", "experiment_id"])
-
+    
+    plt.figure()
     sns.scatterplot(x="tas", y="sfcWind", data=df, hue="experiment_id")
     plt.title(
         "Correlation coefficient is " + str(np.round(df["tas"].corr(df["sfcWind"]), 2))
     )
     plt.ylabel(country + " offshore wind speed change [m/s]")
     plt.xlabel("Equator minus pole temperature change [K]")
-
+    
+    plt.tight_layout()
     plt.savefig(
         "../plots/tas_gradient/Scatter_plot_"
         + country
         + "_offshore_"
-        + offshore
+        + str(offshore)
         + ".jpeg",
         dpi=300,
     )
@@ -197,7 +201,7 @@ def make_all_plots():
 
     # Proxies for amplitude of change
     amplitude_compute_plot(wind_ds, gradient_ds, method="mean_changes")
-    amplitude_compute_plot(wind_ds, gradient_ds, method="extremes")
+    amplitude_compute_plot(wind_ds, gradient_ds, method="extreme")
 
     # Country level scatter plots
     for country in ["Norway", "United Kingdom", "Ireland", "Germany", "Portugal", "all"]:
