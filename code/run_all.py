@@ -6,6 +6,7 @@ import plot_s10_maps
 import plot_s10_scatter
 import plot_s10_country_heatmaps
 import analyze_LUCAS_profiles
+import plot_temperature_gradient
 """
 Calculations
 """
@@ -35,7 +36,8 @@ plot_s10_country_heatmaps.make_s10_heatmaps(onshore=True)
 plot_s10_country_heatmaps.make_s10_heatmaps(onshore=False)
 # Maps of land use change forcing data
 plot_lu_maps.make_LUH_maps()
-
+# Temperature gradient plots
+plot_temperature_gradient.make_all_plots()
 
 # Plots of REMO LUCAS simulations
 analyze_LUCAS_profiles.analyze_LUCAS()
