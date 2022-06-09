@@ -368,12 +368,13 @@ def make_joint_plots():
     :return:
     """
     # CORDEX vs. CMIP5 changes
-    for cordex_vs_CMIP5_changes in [True, False]:
+    for cordex_vs_CMIP5_changes in [False, True]:
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
         if cordex_vs_CMIP5_changes:
             f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
         else:
-            f, axs = plt.subplots(ncols=3, figsize=(12, 8), **SUBPLOT_KW)
+            f, axs = plt.subplots(ncols=3, nrows=2, figsize=(9.6, 4),**SUBPLOT_KW)
+            cbar_ax = f.add_axes([0.15, 0.06, 0.7, 0.05])
         for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             # open data
             diff_cordex = xr.open_dataset(
@@ -392,7 +393,7 @@ def make_joint_plots():
                 (diff_cordex - diff_cmip5)["sfcWind"].plot(
                     ax=axs[i],
                     levels=[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3],
-                    cmap=plt.get_cmap("coolwarm"),
+                    #cmap=plt.get_cmap("coolwarm"),
                     cbar_kwargs={
                         "label": "Wind speed change [m/s]",
                         "orientation": "horizontal",
@@ -401,21 +402,42 @@ def make_joint_plots():
                 )
                 axs[i].set_title(experiment_id + "; CORDEX - CMIP5")
                 add_coast_boarders(axs[i])
+                plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
             else:
+                plt.subplots_adjust(hspace=0.05, bottom=0.15)
                 for j, ds in enumerate([diff_cmip5, diff_cordex]):
-                    ds["sfcWind"].plot(
-                        ax=axs[i, 0],
-                        levels=[x for x in linspace(-0.5, 0.5, 11) if x != 0],
-                        cmap=plt.get_cmap("coolwarm"),
-                        cbar_kwargs={
-                            "label": "Wind speed change [m/s]",
-                            "orientation": "horizontal",
-                        },
-                        **plot_params
+                    if (j==1) & (i==1): 
+                        ds["sfcWind"].plot(
+                            ax=axs[j, i],
+                            levels=[x for x in linspace(-0.5, 0.5, 11) if x != 0],
+                            cbar_ax=cbar_ax,
+                            #cmap=plt.get_cmap("coolwarm"),
+                            cbar_kwargs={
+                                "label": "Ensemble mean wind speed change [m/s]",
+                                "orientation": "horizontal",
+                            },
+                            **plot_params
+                        )
+                    else:
+                        ds["sfcWind"].plot(
+                            ax=axs[j, i],
+                            levels=[x for x in linspace(-0.5, 0.5, 11) if x != 0],
+                            add_colorbar=False,
+                            **plot_params
+                        )
+                    add_coast_boarders(axs[j, i])
+                    axs[j, 0].text(
+                        -0.1,
+                        0.5,
+                        ["CMIP5", "EURO-CORDEX"][j],
+                        rotation="vertical",
+                        fontsize=10,
+                        transform=axs[j, 0].transAxes,
+                        **TEXT_PARAMS
                     )
-                axs[i ,0].set_title(experiment_id)
-
-        plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
+                axs[0, i].set_title(experiment_id)
+                axs[1, i].set_title("")
+                plt.savefig("../plots/aggregate/windchange_mean.png", **FIG_PARAMS)
 
 
 def make_aggregate_monthly_plots(
