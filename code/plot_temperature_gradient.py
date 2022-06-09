@@ -8,6 +8,7 @@ import seaborn as sns
 import numpy as np
 from plot_s10_maps import add_coast_boarders, SUBPLOT_KW
 import cartopy.crs as ccrs
+from scipy.optimize import curve_fit
 
 
 def load_winds_tempgradients(metric="diff"):
@@ -83,7 +84,7 @@ def correlation_compute_plot(wind_ds, gradient_ds):
 
 
 def amplitude_compute_plot(wind_ds, gradient_ds, method):
-    assert method in ["mean_changes", "extreme"]
+    assert method in ["mean_changes", "extreme", "regression"]
     if method == "mean_changes":
         # A) based on mean changes
         delta_wind = wind_ds["sfcWind"].mean(dim="experiments")
@@ -93,14 +94,32 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method):
         levels = np.linspace(-0.1, 0.1, 11)
     elif method == "extreme":
         # B) based on extreme cases
-        strongest_change = gradient_ds["tas"].argmin()  # minimum is correct because gradient change negative
+        strongest_change = gradient_ds[
+            "tas"
+        ].argmin()  # minimum is correct because gradient change negative
         slope_proxy = wind_ds["sfcWind"].sel(experiments=strongest_change)
         label = "Wind change in max gradient change experiment [m/s]"
         levels = np.linspace(-1, 1, 11)
-    #elif method == "regression":
-    #    print("Not implemented yet")
-    #    fit = xr.polyfit(wind_ds["sfcWind"], gradient_ds["tas"], dim="experiments")
-    #    return
+    elif method == "regression":
+
+        def _fit_func(x, a, b):
+            """linear fit function with offset"""
+            return a * x + b
+
+        # there is probably a more efficient way to implement this using .apply but it doesn't seem worthwhile to dump a lot of time here
+        slope_proxy = wind_ds.isel({"experiments": 1}) * 0
+        # loop over lats
+        for lat in slope_proxy.lat:
+            # loop over lons
+            for lon in slope_proxy.lon:
+                x = gradient_ds["tas"].sel({"lat": lat, "lon": lon})
+                y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
+                slope_proxy.loc[{"lat": lat, "lon": lon}] = curve_fit(
+                    _fit_func, x.values, y.values
+                )[0][0]
+                slope_proxy.rename({"sfcWind": "ds/dtg"})
+        "Wind change per gradient change  [m/s /K]"
+        levels = np.linspace(-0.1, 0.1, 11)
     for scope in ["Globe", "Europe"]:
         f, ax = prepare_figure(scope)
         slope_proxy.plot(
@@ -173,7 +192,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
         [".".join(x.split(".")[:2]) for x in wind_df.index], name="identifier"
     )
     df = pd.merge(tas_df, wind_df, on=["identifier", "experiment_id"])
-    
+
     plt.figure()
     sns.scatterplot(x="tas", y="sfcWind", data=df, hue="experiment_id")
     plt.title(
@@ -181,7 +200,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
     )
     plt.ylabel(country + " offshore wind speed change [m/s]")
     plt.xlabel("Equator minus pole temperature change [K]")
-    
+
     plt.tight_layout()
     plt.savefig(
         "../plots/tas_gradient/Scatter_plot_"
@@ -200,11 +219,17 @@ def make_all_plots():
     correlation_compute_plot(wind_ds, gradient_ds)
 
     # Proxies for amplitude of change
-    amplitude_compute_plot(wind_ds, gradient_ds, method="mean_changes")
-    amplitude_compute_plot(wind_ds, gradient_ds, method="extreme")
+    amplitude_compute_plot(wind_ds, gradient_ds, method="regression")
 
     # Country level scatter plots
-    for country in ["Norway", "United Kingdom", "Ireland", "Germany", "Portugal", "all"]:
+    for country in [
+        "Norway",
+        "United Kingdom",
+        "Ireland",
+        "Germany",
+        "Portugal",
+        "all",
+    ]:
         for offshore in [True, False]:
             scatter_compute_plot_country(country, offshore)
     # add couple of countries without coast
