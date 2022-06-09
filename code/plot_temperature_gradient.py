@@ -8,7 +8,7 @@ import seaborn as sns
 import numpy as np
 from plot_s10_maps import add_coast_boarders, SUBPLOT_KW
 import cartopy.crs as ccrs
-from scipy.optimize import curve_fit
+from scipy.stats import linregress
 
 
 def load_winds_tempgradients(metric="diff"):
@@ -101,23 +101,20 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method):
         label = "Wind change in max gradient change experiment [m/s]"
         levels = np.linspace(-1, 1, 11)
     elif method == "regression":
-
-        def _fit_func(x, a, b):
-            """linear fit function with offset"""
-            return a * x + b
-
         # there is probably a more efficient way to implement this using .apply but it doesn't seem worthwhile to dump a lot of time here
-        slope_proxy = wind_ds.isel({"experiments": 1}) * 0
+        slope_proxy = wind_ds["sfcWind"].isel({"experiments": 1}) * 0
         # loop over lats
         x = gradient_ds["tas"]
         for lat in slope_proxy.lat:
             # loop over lons
             for lon in slope_proxy.lon:
                 y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
-                slope_proxy.loc[{"lat": lat, "lon": lon}] = curve_fit(
-                    _fit_func, x.values, y.values
-                )[0][0]
-        slope_proxy.rename({"sfcWind": "ds/dtg"})
+                res = linregress(x.values, y.values)
+                if abs(res.rvalue) > .6:
+                    slope_tmp = res.slope
+                else:
+                    slope_tmp = np.nan
+                slope_proxy.loc[{"lat": lat, "lon": lon}] = slope_tmp
         label = "Wind change per gradient change  [m/s /K]"
         levels = np.linspace(-0.1, 0.1, 11)
     for scope in ["Globe", "Europe"]:
