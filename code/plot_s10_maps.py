@@ -175,7 +175,7 @@ def plot_aggregate(
                 plot_data = ds.sel(RCMs=model).mean(dim="GCMs", skipna=True)
             elif aggregate_dimension == "GCM":
                 plot_data = ds.sel(GCMs=model).mean(dim="RCMs", skipna=True)
-            levels = [x for x in linspace(-5.0, 5, 11) if x != 0]
+            levels = [x for x in linspace(-0.5, 0.5, 11) if x != 0]
         elif metric == "standard_deviation":
             if aggregate_dimension == "RCM":
                 plot_data = ds.sel(RCMs=model).std(dim="GCMs", skipna=True)
@@ -217,9 +217,6 @@ def plot_aggregate(
             **FIG_PARAMS
         )
     return i
-
-
-# execute everything from here onwards
 
 
 def make_individual_plots():
@@ -311,7 +308,7 @@ def make_aggregate_plots():
             plot_params = {"x": "lon", "y": "lat", "extend": "both"}
             diff.mean(dim="identifier")["sfcWind"].plot(
                 ax=axs[0],
-                levels=[x for x in linspace(-5.0, 5, 11) if x != 0],
+                levels=[x for x in linspace(-.5, .5, 11) if x != 0],
                 cmap=plt.get_cmap("coolwarm"),
                 cbar_kwargs={
                     "label": "Wind speed change [m/s]",
@@ -354,6 +351,7 @@ def make_aggregate_plots():
                 weight="bold",
                 **TEXT_PARAMS
             )
+            plt.subplots_adjust(left=0.05, right=0.95, top=0.95)
             plt.savefig(
                 "../plots/aggregate/"
                 + experiment_family.lower()
@@ -495,7 +493,10 @@ def make_s10_maps():
         "tas",
         "ts",
         "tas-ts",
-        "sic",
-    ]:  # todo currently has to fail towards the end because sic CMIP data not available
+    ]:
         make_aggregate_monthly_plots(variable)
+    try:
+        make_aggregate_monthly_plots("sic")
+    except KeyError:
+        print("SIC data incomplete because not available for CMIP5")
     make_aggregate_monthly_plots("tas-ts", "mean", "historical")
