@@ -24,31 +24,10 @@ TEXT_PARAMS = {
 MEAN_PLOT_PARAMS = {
     "x": "lon",
     "y": "lat",
-    "vmin": -0.8,
-    "vmax": 0.8,
+    "levels": linspace(-0.7, 0.7, 8),
     "extend": "both",
     "cmap": plt.get_cmap("coolwarm"),
 }
-
-
-def add_hatching(ax, da, levels=[-10, -0.1, 0.1, 10], hatch="....", **kwargs):
-    """
-    Hatch out areas between levels[1] and levels[2]
-    :param ax:
-    :param da:
-    :param levels:
-    :param hatch:
-    :return:
-    """
-    da = da.squeeze()
-    da.plot.contourf(
-        ax=ax,
-        levels=levels,
-        colors="none",
-        hatches=[None, hatch, None],
-        add_colorbar=False,
-        **kwargs
-    )
 
 
 def add_coast_boarders(ax):
@@ -109,13 +88,6 @@ def plot_array(ds):
                 ds["sfcWind"].sel(identifier=ident).plot(
                     ax=ax, add_colorbar=False, **MEAN_PLOT_PARAMS
                 )
-            add_hatching(
-                ax,
-                ds["sfcWind"].sel(identifier=ident),
-                hatch=".....",
-                x="lon",
-                y="lat",
-            )
             add_coast_boarders(ax)
             ax.set_title("")
     for i, GCM in enumerate(GCMs):  # add GCM name as column headings
@@ -158,12 +130,6 @@ def plot_array_CMIP5(ds):
             ds["sfcWind"].sel(identifier=ident).plot(
                 ax=axs.flatten()[i], add_colorbar=False, **MEAN_PLOT_PARAMS
             )
-        add_hatching(
-            axs.flatten()[i],
-            ds["sfcWind"].sel(identifier=ident),
-            x="lon",
-            y="lat",
-        )
         axs.flatten()[i].set_title(GCM, fontsize=6)
         add_coast_boarders(axs.flatten()[i])
     plt.subplots_adjust(0.02, 0.15, 0.98, 0.99)
@@ -209,13 +175,13 @@ def plot_aggregate(
                 plot_data = ds.sel(RCMs=model).mean(dim="GCMs", skipna=True)
             elif aggregate_dimension == "GCM":
                 plot_data = ds.sel(GCMs=model).mean(dim="RCMs", skipna=True)
-            vmin, vmax = -0.5, 0.5
+            levels = [x for x in linspace(-5.0, 5, 11) if x != 0]
         elif metric == "standard_deviation":
             if aggregate_dimension == "RCM":
                 plot_data = ds.sel(RCMs=model).std(dim="GCMs", skipna=True)
             elif aggregate_dimension == "GCM":
                 plot_data = ds.sel(GCMs=model).std(dim="RCMs", skipna=True)
-            vmin, vmax = 0, 0.25
+            levels = linspace(0, 0.25, 6)
             cmap = plt.get_cmap("Greens")
         elif metric == "mean_per_std":
             if aggregate_dimension == "RCM":
@@ -226,26 +192,17 @@ def plot_aggregate(
                 plot_data = ds.sel(GCMs=model).mean(dim="RCMs", skipna=True) / ds.sel(
                     GCMs=model
                 ).std(dim="RCMs", skipna=True)
-            vmin, vmax = -2, 2
+            levels = linspace(-1.9, 1.9, 20)
         plot_data["sfcWind"].plot(
             x="lon",
             y="lat",
             ax=axs[i],
-            vmin=vmin,
-            vmax=vmax,
+            levels=levels,
             extend="both",
             cbar_ax=cbar_ax,
             cmap=cmap,
             cbar_kwargs={"label": label, "orientation": "horizontal"},
         )
-        if metric == "mean":
-            # todo maybe make hatching differently, e.g., by masking out areas with low signal to noise ratio
-            add_hatching(
-                axs[i],
-                plot_data["sfcWind"],
-                x="lon",
-                y="lat",
-            )
         axs[i].set_title(model + ", " + str(N_models), fontsize=8)
         add_coast_boarders(axs[i])
         i += 1
@@ -354,17 +311,13 @@ def make_aggregate_plots():
             plot_params = {"x": "lon", "y": "lat", "extend": "both"}
             diff.mean(dim="identifier")["sfcWind"].plot(
                 ax=axs[0],
-                vmin=-0.5,
-                vmax=0.5,
+                levels=[x for x in linspace(-5.0, 5, 11) if x != 0],
                 cmap=plt.get_cmap("coolwarm"),
                 cbar_kwargs={
                     "label": "Wind speed change [m/s]",
                     "orientation": "horizontal",
                 },
                 **plot_params
-            )
-            add_hatching(
-                axs[0], diff.mean(dim="identifier")["sfcWind"], x="lon", y="lat"
             )
             diff.std(dim="identifier")["sfcWind"].plot(
                 ax=axs[1],
