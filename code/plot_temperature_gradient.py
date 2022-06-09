@@ -109,16 +109,16 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method):
         # there is probably a more efficient way to implement this using .apply but it doesn't seem worthwhile to dump a lot of time here
         slope_proxy = wind_ds.isel({"experiments": 1}) * 0
         # loop over lats
+        x = gradient_ds["tas"]
         for lat in slope_proxy.lat:
             # loop over lons
             for lon in slope_proxy.lon:
-                x = gradient_ds["tas"].sel({"lat": lat, "lon": lon})
                 y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
                 slope_proxy.loc[{"lat": lat, "lon": lon}] = curve_fit(
                     _fit_func, x.values, y.values
                 )[0][0]
-                slope_proxy.rename({"sfcWind": "ds/dtg"})
-        "Wind change per gradient change  [m/s /K]"
+        slope_proxy.rename({"sfcWind": "ds/dtg"})
+        label = "Wind change per gradient change  [m/s /K]"
         levels = np.linspace(-0.1, 0.1, 11)
     for scope in ["Globe", "Europe"]:
         f, ax = prepare_figure(scope)
