@@ -26,7 +26,7 @@ MEAN_PLOT_PARAMS = {
     "y": "lat",
     "levels": linspace(-0.7, 0.7, 8),
     "extend": "both",
-    "cmap": plt.get_cmap("coolwarm"),
+    "cmap": plt.get_cmap("RdBu_r"),
 }
 
 
@@ -169,7 +169,7 @@ def plot_aggregate(
             .values.sum()
         )
     if N_models > 1:
-        cmap = plt.get_cmap("coolwarm")
+        cmap = plt.get_cmap("RdBu_r")
         if metric == "mean":
             if aggregate_dimension == "RCM":
                 plot_data = ds.sel(RCMs=model).mean(dim="GCMs", skipna=True)
@@ -309,7 +309,6 @@ def make_aggregate_plots():
             diff.mean(dim="identifier")["sfcWind"].plot(
                 ax=axs[0],
                 levels=[x for x in linspace(-0.5, 0.5, 11) if x != 0],
-                cmap=plt.get_cmap("coolwarm"),
                 cbar_kwargs={
                     "label": "Wind speed change [m/s]",
                     "orientation": "horizontal",
@@ -331,7 +330,6 @@ def make_aggregate_plots():
                 ax=axs[2],
                 vmin=-2,
                 vmax=2,
-                cmap=plt.get_cmap("coolwarm"),
                 cbar_kwargs={
                     "label": "Mean wind change / standard deviation [1]",
                     "orientation": "horizontal",
@@ -373,8 +371,8 @@ def make_joint_plots():
         if cordex_vs_CMIP5_changes:
             f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
         else:
-            f, axs = plt.subplots(ncols=3, nrows=2, figsize=(9.6, 4),**SUBPLOT_KW)
-            cbar_ax = f.add_axes([0.15, 0.06, 0.7, 0.05])
+            f, axs = plt.subplots(ncols=3, nrows=2, figsize=(10, 5),**SUBPLOT_KW)
+            cbar_ax = f.add_axes([0.15, 0.1, 0.7, 0.05])
         for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             # open data
             diff_cordex = xr.open_dataset(
@@ -393,7 +391,6 @@ def make_joint_plots():
                 (diff_cordex - diff_cmip5)["sfcWind"].plot(
                     ax=axs[i],
                     levels=[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3],
-                    #cmap=plt.get_cmap("coolwarm"),
                     cbar_kwargs={
                         "label": "Wind speed change [m/s]",
                         "orientation": "horizontal",
@@ -404,14 +401,13 @@ def make_joint_plots():
                 add_coast_boarders(axs[i])
                 plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
             else:
-                plt.subplots_adjust(hspace=0.05, bottom=0.15)
+                plt.subplots_adjust(hspace=0.05, wspace=0.05, bottom=0.18, top=0.97, left=0.04, right=0.97)
                 for j, ds in enumerate([diff_cmip5, diff_cordex]):
                     if (j==1) & (i==1): 
                         ds["sfcWind"].plot(
                             ax=axs[j, i],
                             levels=[x for x in linspace(-0.5, 0.5, 11) if x != 0],
                             cbar_ax=cbar_ax,
-                            #cmap=plt.get_cmap("coolwarm"),
                             cbar_kwargs={
                                 "label": "Ensemble mean wind speed change [m/s]",
                                 "orientation": "horizontal",
@@ -483,7 +479,6 @@ def make_aggregate_monthly_plots(
                     ].squeeze().plot(
                         ax=axs[i_month, i_col],
                         levels=levels,
-                        cmap=plt.get_cmap("coolwarm"),
                         cbar_kwargs={
                             "label": experiment_family
                             + " "
@@ -502,7 +497,6 @@ def make_aggregate_monthly_plots(
                     ].squeeze().plot(
                         ax=axs[i_month, i_col],
                         levels=levels,
-                        cmap=plt.get_cmap("coolwarm"),
                         add_colorbar=False,
                         **plot_params
                     )
@@ -544,6 +538,6 @@ def make_s10_maps():
         make_aggregate_monthly_plots(variable)
     try:
         make_aggregate_monthly_plots("sic")
-    except KeyError:
+    except:
         print("SIC data incomplete because not available for CMIP5")
     make_aggregate_monthly_plots("tas-ts", "mean", "historical")
