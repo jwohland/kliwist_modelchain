@@ -5,7 +5,7 @@ from plot_s10_maps import add_coast_boarders, SUBPLOT_KW, FIG_PARAMS
 PLOT_PARAMS = {
     "levels": [-0.35, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.35],
     "extend": "both",
-    "cmap": plt.get_cmap("RdBu_r"),
+    "cmap": plt.get_cmap("RdBu"),
 }
 
 
