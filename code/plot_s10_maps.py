@@ -545,7 +545,8 @@ def make_s10_maps():
     make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
     make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
     for variable in [
-        "sfcWind" "tas",
+        "sfcWind",
+        "tas",
         "ts",
         "tas-ts",
     ]:
