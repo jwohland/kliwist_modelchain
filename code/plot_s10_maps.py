@@ -371,7 +371,7 @@ def make_joint_plots():
         if cordex_vs_CMIP5_changes:
             f, axs = plt.subplots(ncols=3, figsize=(12, 4), **SUBPLOT_KW)
         else:
-            f, axs = plt.subplots(ncols=3, nrows=2, figsize=(10, 5),**SUBPLOT_KW)
+            f, axs = plt.subplots(ncols=3, nrows=2, figsize=(10, 5), **SUBPLOT_KW)
             cbar_ax = f.add_axes([0.15, 0.1, 0.7, 0.05])
         for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             # open data
@@ -401,9 +401,16 @@ def make_joint_plots():
                 add_coast_boarders(axs[i])
                 plt.savefig("../plots/aggregate/diff_windchange_mean.png", **FIG_PARAMS)
             else:
-                plt.subplots_adjust(hspace=0.05, wspace=0.05, bottom=0.18, top=0.97, left=0.04, right=0.97)
+                plt.subplots_adjust(
+                    hspace=0.05,
+                    wspace=0.05,
+                    bottom=0.18,
+                    top=0.97,
+                    left=0.04,
+                    right=0.97,
+                )
                 for j, ds in enumerate([diff_cmip5, diff_cordex]):
-                    if (j==1) & (i==1): 
+                    if (j == 1) & (i == 1):
                         ds["sfcWind"].plot(
                             ax=axs[j, i],
                             levels=[x for x in linspace(-0.5, 0.5, 11) if x != 0],
@@ -446,19 +453,24 @@ def make_aggregate_monthly_plots(
     Plotted values are changes in the monthly mean future minus historical
     :return:
     """
+    units = {
+        "sfcWind": "m/s",
+        "sic": "fraction of grid cell",
+        "tas": "K",
+        "ts": "K",
+        "tas-ts": "K",
+    }
     for experiment_family in ["CORDEX", "CMIP5"]:
         f, axs = plt.subplots(ncols=3, nrows=12, figsize=(6, 18), **SUBPLOT_KW)
         plt.subplots_adjust(0.05, 0.1, 0.97, 0.97, hspace=0.05, wspace=0.05)
         cbar_ax = f.add_axes([0.1, 0.06, 0.8, 0.01])
         plot_params = {"x": "lon", "y": "lat", "extend": "both"}
-        if variable_id == "sfcWind":
+        if variable_id in ["sfcWind", "sic", "tas-ts"]:
             levels = linspace(-0.9, 0.9, 10)
         elif variable_id in ["tas", "ts"]:
-            levels = linspace(-5, 5, 11)
-        elif variable_id in ["sic", "tas-ts"]:
-            levels = linspace(-1, 1, 11)
+            levels = [x for x in linspace(-5, 5, 11) if x != 0]
         if (variable_id == "tas-ts") & (method == "mean"):
-            levels = linspace(-3, 3, 13)
+            levels = [x for x in linspace(-2.4, 2.4, 17) if x != 0]
         for i_col, experiment_id in enumerate(experiment_ids):
             diff = xr.open_dataset(
                 "../output/"
@@ -484,7 +496,10 @@ def make_aggregate_monthly_plots(
                             + " "
                             + variable_id
                             + " "
-                            + method,  # todo add units later
+                            + method
+                            + " ["
+                            + units[variable_id]
+                            + "]",
                             "orientation": "horizontal",
                         },
                         cbar_ax=cbar_ax,
@@ -514,23 +529,23 @@ def make_aggregate_monthly_plots(
             axs[0, i_col].set_title(experiment_id)
 
         plt.savefig(
-            "../plots/aggregate/"
+            "../plots/aggregate/monthly/"
             + experiment_family
             + "_"
             + method
             + "_"
             + variable_id
-            + "change_mean_monthly.png",
+            + "_monthly.png",
             **FIG_PARAMS
         )
 
 
 def make_s10_maps():
-    make_individual_plots()
-    make_aggregate_plots()
-    make_joint_plots()
-    make_aggregate_monthly_plots()
+    #make_individual_plots()  # wind speed change per GCM and RCM
+    #make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
+    #make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
     for variable in [
+        "sfcWind",
         "tas",
         "ts",
         "tas-ts",
@@ -540,4 +555,4 @@ def make_s10_maps():
         make_aggregate_monthly_plots("sic")
     except:
         print("SIC data incomplete because not available for CMIP5")
-    make_aggregate_monthly_plots("tas-ts", "mean", "historical")
+    make_aggregate_monthly_plots("tas-ts", "mean", ["historical", "rcp45", "rcp85"])
