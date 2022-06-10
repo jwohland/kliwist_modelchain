@@ -2,6 +2,7 @@ import xarray as xr
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
+from numpy import linspace
 
 
 def make_s10_heatmaps(onshore):
@@ -43,9 +44,8 @@ def make_s10_heatmaps(onshore):
             ax=axs[i],
             annot=True,
             fmt=".2f",
-            cmap=plt.get_cmap("coolwarm", 5),
-            vmin=-0.3,
-            vmax=0.3,
+            cmap=plt.get_cmap("RdBu"),
+            levels=[x for x in linspace(-0.3, 0.3, 7) if x != 0],
             cbar_kws={
                 "orientation": "horizontal",
                 "label": "Ensemble mean wind speed change [m/s]",
