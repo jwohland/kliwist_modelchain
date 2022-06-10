@@ -453,6 +453,13 @@ def make_aggregate_monthly_plots(
     Plotted values are changes in the monthly mean future minus historical
     :return:
     """
+    units = {
+        "sfcWind": "m/s",
+        "sic": "fraction of grid cell",
+        "tas": "K",
+        "ts": "K",
+        "tas-ts": "K",
+    }
     for experiment_family in ["CORDEX", "CMIP5"]:
         f, axs = plt.subplots(ncols=3, nrows=12, figsize=(6, 18), **SUBPLOT_KW)
         plt.subplots_adjust(0.05, 0.1, 0.97, 0.97, hspace=0.05, wspace=0.05)
@@ -489,7 +496,10 @@ def make_aggregate_monthly_plots(
                             + " "
                             + variable_id
                             + " "
-                            + method,  # todo add units later
+                            + method,
+                            + " ["
+                            +units[variable_id]
+                            + "]"
                             "orientation": "horizontal",
                         },
                         cbar_ax=cbar_ax,
