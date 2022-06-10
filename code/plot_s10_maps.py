@@ -498,7 +498,7 @@ def make_aggregate_monthly_plots(
                             + " "
                             + method
                             + " ["
-                            +units[variable_id]
+                            + units[variable_id]
                             + "]",
                             "orientation": "horizontal",
                         },
@@ -535,18 +535,17 @@ def make_aggregate_monthly_plots(
             + method
             + "_"
             + variable_id
-            + "_change_mean_monthly.png",
+            + "_monthly.png",
             **FIG_PARAMS
         )
 
 
 def make_s10_maps():
-    make_individual_plots()
-    make_aggregate_plots()
-    make_joint_plots()
-    make_aggregate_monthly_plots()
+    make_individual_plots()  # wind speed change per GCM and RCM
+    make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
+    make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
     for variable in [
-        "tas",
+        "sfcWind" "tas",
         "ts",
         "tas-ts",
     ]:
@@ -555,4 +554,4 @@ def make_s10_maps():
         make_aggregate_monthly_plots("sic")
     except:
         print("SIC data incomplete because not available for CMIP5")
-    make_aggregate_monthly_plots("tas-ts", "mean", "historical")
+    make_aggregate_monthly_plots("tas-ts", "mean", ["historical", "rcp45", "rcp85"])
