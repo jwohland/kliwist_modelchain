@@ -529,7 +529,7 @@ def make_aggregate_monthly_plots(
             axs[0, i_col].set_title(experiment_id)
 
         plt.savefig(
-            "../plots/aggregate/"
+            "../plots/aggregate/monthly/"
             + experiment_family
             + "_"
             + method
