@@ -44,11 +44,13 @@ def make_s10_heatmaps(onshore):
             ax=axs[i],
             annot=True,
             fmt=".2f",
-            cmap=plt.get_cmap("RdBu"),
-            levels=[x for x in linspace(-0.3, 0.3, 7) if x != 0],
+            cmap=plt.get_cmap("RdBu_r", 5),
+            vmin=-.3, 
+            vmax=.3,
             cbar_kws={
                 "orientation": "horizontal",
                 "label": "Ensemble mean wind speed change [m/s]",
+                "ticks": linspace(-.3, .3, 6),
             },
             cbar_ax=cbar_ax,
         )
