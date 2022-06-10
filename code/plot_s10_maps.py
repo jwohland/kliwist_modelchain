@@ -496,10 +496,10 @@ def make_aggregate_monthly_plots(
                             + " "
                             + variable_id
                             + " "
-                            + method,
+                            + method
                             + " ["
                             +units[variable_id]
-                            + "]"
+                            + "]",
                             "orientation": "horizontal",
                         },
                         cbar_ax=cbar_ax,
