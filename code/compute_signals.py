@@ -102,6 +102,7 @@ def get_dataset_dictionary(
                 except:
                     print(GCM + " not found")
         else:
+            subset = subset.search(ensemble_member=standard_ensemble_member)
             ds_dict = subset.to_dataset_dict(
                 cdf_kwargs={"use_cftime": True, "chunks": {}}
             )
