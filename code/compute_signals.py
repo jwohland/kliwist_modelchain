@@ -276,11 +276,17 @@ def dictionary_to_dataset(
         aggregate_temporally(ds, experiment_id, time_aggregation) for ds in list_ds
     ]
     if experiment_family.lower() == "cmip5":
-        # regrid all CMIP5 results to grid of first model
+        # regrid all CMIP5 results to a fixed grid
         import xesmf as xe
-
+        import numpy as np
+        ds_typical = xr.Dataset(
+            {
+                "lat": (["lat"], np.arange(-89.25, 90, 1.5)),
+                "lon": (["lon"], np.arange(0, 360, 1.75)),
+            }
+        )  # this resolution is representative for CMIP5 horizontal resolutions and avoids grid points at the pole
         for i in range(1, len(list_ds)):
-            regridder = xe.Regridder(list_ds[i], list_ds[0], "bilinear", periodic=True)
+            regridder = xe.Regridder(list_ds[i], ds_typical, "bilinear", periodic=True)
             list_ds[i] = regridder(list_ds[i])
     return xr.concat(list_ds, dim="identifier")
 
