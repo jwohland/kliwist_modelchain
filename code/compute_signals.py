@@ -333,6 +333,10 @@ def calculate_mean(
         del ds_dict["LASG-CESS.FGOALS-g2.historical.Amon"]
     except:
         """"""
+    # in the large CMIP5 ensemble some tas are reported at 1.5m and some at 2m
+    if variable_id == "tas":
+        for model in list(ds_dict):
+            ds_dict[model] = ds_dict[model].drop("height", errors="ignore")
 
     ds = dictionary_to_dataset(
         ds_dict, experiment_family, experiment_id, time_aggregation
