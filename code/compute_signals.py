@@ -288,7 +288,7 @@ def dictionary_to_dataset(
         for i in range(1, len(list_ds)):
             regridder = xe.Regridder(list_ds[i], ds_typical, "bilinear", periodic=True)
             list_ds[i] = regridder(list_ds[i])
-    return xr.concat(list_ds, dim="identifier", coords="minimal")
+    return xr.concat(list_ds, dim="identifier")
 
 
 def update_identifier(ds, experiment_id):
