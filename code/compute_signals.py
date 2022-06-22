@@ -328,6 +328,11 @@ def calculate_mean(
         del ds_dict["ICHEC.EC-EARTH.historical.Amon"]
     except:
         """"""
+    # same for FGOALS
+    try:
+        del ds_dict["LASG-CESS.FGOALS-g2.historical.Amon"]
+    except:
+        """"""
 
     ds = dictionary_to_dataset(
         ds_dict, experiment_family, experiment_id, time_aggregation
