@@ -287,7 +287,6 @@ def dictionary_to_dataset(
             }
         )  # this resolution is representative for CMIP5 horizontal resolutions and avoids grid points at the pole
         for i in range(1, len(list_ds)):
-            print(i)
             regridder = xe.Regridder(list_ds[i], ds_typical, "bilinear", periodic=True, ignore_degenerate=True)
             list_ds[i] = regridder(list_ds[i])
     return xr.concat(list_ds, dim="identifier")
@@ -331,6 +330,9 @@ def calculate_mean(
         "ICHEC.EC-EARTH.historical.Amon",
         "LASG-CESS.FGOALS-g2.historical.Amon",
         "NCAR.CCSM4.rcp26.Amon",
+        "NCAR.CCSM4.rcp45.Amon", 
+        "NOAA-GFDL.GFDL-CM2p1.rcp45.Amon", 
+        "ICHEC.EC-EARTH.rcp45.Amon", 
     ]:
         try:
             del ds_dict[ignore_model]
