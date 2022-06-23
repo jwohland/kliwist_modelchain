@@ -11,7 +11,7 @@ import cartopy.crs as ccrs
 from scipy.stats import linregress
 
 
-def load_winds_tempgradients(metric="diff"):
+def load_winds_tempgradients(metric="diff", full_ensemble=False):
     """
     open wind speed change and tas change data across all scenarios and concatenates them together.
 
@@ -19,20 +19,32 @@ def load_winds_tempgradients(metric="diff"):
     :param metric:
     :return:
     """
-    path_sfc = "../output/sfcWind/monthly/"
-    path_tas = "/work/ch0636/g300106/projects/kliwist_modelchain/output/tas/monthly/"
+    if full_ensemble:
+        path_sfc = "../output/sfcWind/all/"
+        path_tas = "../output/tas/all/"
+    else:
+        path_sfc = "../output/sfcWind/monthly/"
+        path_tas = "/work/ch0636/g300106/projects/kliwist_modelchain/output/tas/monthly/"
 
     wind_list, gradient_list = [], []
     for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
         name = metric + "_" + experiment_id
         ds_wind = xr.open_dataset(path_sfc + "cmip5_" + name + ".nc")
         ds_tmp = xr.open_dataset(path_tas + "cmip5_" + name + ".nc")
-        T_equator = ds_tmp.sel(lat=slice(-10, 10)).mean(dim=["lat", "lon", "month"])
-        T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=["lat", "lon", "month"])
+        if full_ensemble:
+            average_dims = ["lat", "lon", "year"]
+        else:
+            average_dims = ["lat", "lon", "month"]
+        T_equator = ds_tmp.sel(lat=slice(-10, 10)).mean(dim=average_dims)
+        T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=average_dims)
         T_gradient = T_equator - T_pole
         for identifier in ds_wind.identifier.values:
+            if full_ensemble:
+                average_dim = "year"
+            else:
+                average_dim = "month"
             wind_list.append(
-                ds_wind.mean(dim="month")
+                ds_wind.mean(dim=average_dim)
                 .sel(identifier=identifier, drop=True)
                 .drop("height")
             )
@@ -57,7 +69,7 @@ def prepare_figure(scope):
     return f, ax
 
 
-def correlation_compute_plot(wind_ds, gradient_ds):
+def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False):
     """
     Calculates the correlation between changes in wind gradient and wind speeds and plots
     global correlation map and European correlation map
@@ -80,7 +92,10 @@ def correlation_compute_plot(wind_ds, gradient_ds):
             },
         )
         add_coast_boarders(ax)
-        plt.savefig("../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300)
+        if full_ensemble:
+            plt.savefig("../plots/tas_gradient/Correlation_map_" + scope + "_full_ensemble.jpeg", dpi=300)
+        else:
+            plt.savefig("../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300)
 
 
 def amplitude_compute_plot(wind_ds, gradient_ds, method):
