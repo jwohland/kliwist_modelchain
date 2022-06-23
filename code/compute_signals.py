@@ -286,7 +286,7 @@ def dictionary_to_dataset(
                 "lon": (["lon"], np.arange(0, 360, 1.75)),
             }
         )  # this resolution is representative for CMIP5 horizontal resolutions and avoids grid points at the pole
-        for i in range(1, len(list_ds)):
+        for i in range(0, len(list_ds)):
             regridder = xe.Regridder(list_ds[i], ds_typical, "bilinear", periodic=True, ignore_degenerate=True)
             list_ds[i] = regridder(list_ds[i])
     return xr.concat(list_ds, dim="identifier")
