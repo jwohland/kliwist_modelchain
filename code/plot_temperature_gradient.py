@@ -32,21 +32,17 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False):
         ds_wind = xr.open_dataset(path_sfc + "cmip5_" + name + ".nc")
         ds_tmp = xr.open_dataset(path_tas + "cmip5_" + name + ".nc")
         if full_ensemble:
-            average_dims = ["lat", "lon", "year"]
+            average_dims = ["lat", "lon"]
         else:
             average_dims = ["lat", "lon", "month"]
         T_equator = ds_tmp.sel(lat=slice(-10, 10)).mean(dim=average_dims)
         T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=average_dims)
         T_gradient = T_equator - T_pole
         for identifier in ds_wind.identifier.values:
-            if full_ensemble:
-                average_dim = "year"
-            else:
-                average_dim = "month"
+            if not full_ensemble:
+                ds_wind = ds_wind.mean(dim="month")
             wind_list.append(
-                ds_wind.mean(dim=average_dim)
-                .sel(identifier=identifier, drop=True)
-                .drop("height")
+                ds_wind.sel(identifier=identifier, drop=True).drop("height", errors="ignore")
             )
             gradient_list.append(T_gradient.sel(identifier=identifier, drop=True))
     return xr.concat(wind_list, dim="experiments"), xr.concat(
@@ -77,10 +73,22 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False):
     :param gradient_ds:
     :return:
     """
+    
+    #remove nans in full_ensemble
+    if full_ensemble:
+        keep_experiments = list(wind_ds.experiments.values)
+        for experiment in wind_ds.experiments:
+            if wind_ds.sel({"experiments": experiment})["sfcWind"].isnull().any():
+                keep_experiments.remove(experiment)
+        wind_ds = wind_ds.sel({"experiments": keep_experiments})
+        gradient_ds = gradient_ds.sel({"experiments": keep_experiments})
+        
     corr = xr.corr(wind_ds["sfcWind"], gradient_ds["tas"], dim="experiments")
     levels = [-1, -0.8, -0.6, 0.6, 0.8, 1]  # mask out correlation smaller than r=0.6
     # global correlation plot
 
+    
+    
     for scope in ["Globe", "Europe"]:
         f, ax = prepare_figure(scope)
         corr.plot(
@@ -98,7 +106,7 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False):
             plt.savefig("../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300)
 
 
-def amplitude_compute_plot(wind_ds, gradient_ds, method):
+def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False):
     assert method in ["mean_changes", "extreme", "regression"]
     if method == "mean_changes":
         # A) based on mean changes
@@ -144,10 +152,16 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method):
             },
         )
         add_coast_boarders(ax)
-        plt.savefig(
-            "../plots/tas_gradient/Amplitude_map_" + method + "_" + scope + ".jpeg",
-            dpi=300,
-        )
+        if full_ensemble:
+            plt.savefig(
+                    "../plots/tas_gradient/Amplitude_map_" + method + "_" + scope + "_full_ensemble.jpeg",
+                    dpi=300,
+                )
+        else:
+            plt.savefig(
+                "../plots/tas_gradient/Amplitude_map_" + method + "_" + scope + ".jpeg",
+                dpi=300,
+            )
 
 
 def scatter_compute_plot_country(country, offshore=True, metric="diff"):
