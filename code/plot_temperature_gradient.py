@@ -45,14 +45,20 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False, experiment_fami
         T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=average_dims)
         T_gradient = T_equator - T_pole
         for identifier in ds_wind.identifier.values:
-            if not full_ensemble:
-                ds_wind = ds_wind.mean(dim="month")
-            wind_list.append(
-                ds_wind.sel(identifier=identifier, drop=True).drop(
-                    "height", errors="ignore"
+            # check that model also provides tas
+            try:
+                gradient_list.append(T_gradient.sel(identifier=identifier, drop=True))
+                if not full_ensemble:
+                    ds_wind = ds_wind.mean(dim="month")
+                wind_list.append(
+                    ds_wind.sel(identifier=identifier, drop=True).drop(
+                        "height", errors="ignore"
+                    )
                 )
-            )
-            gradient_list.append(T_gradient.sel(identifier=identifier, drop=True))
+            except KeyError:
+                print(identifier + " does not provide sfcWind and tas")
+
+
     return xr.concat(wind_list, dim="experiments"), xr.concat(
         gradient_list, dim="experiments"
     )
