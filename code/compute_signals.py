@@ -232,7 +232,7 @@ def preprocess_cmip_dataset(ds, identifier):
             ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
         )
     except:  #CMIP6
-        ds = ds.sel(member_id=ds.ensemble_member, drop=True).squeeze()
+        ds = ds.sel(member_id=ds.member_id, drop=True).squeeze()
         ds = ds.assign_attrs(
             ensemble_information="r1i1p1f1"
         )
@@ -257,7 +257,11 @@ def aggregate_temporally(ds, experiment_id, time_aggregation):
     else:
         years = slice("2080", "2100")
     if time_aggregation == "annual":
-        ds = ds.sel(time=years).mean("time")
+        try:
+            ds = ds.sel(time=years).mean("time")
+        except:  # some datasets do not cover the correct period
+            ds = None
+            """"""
     elif time_aggregation == "monthly":
         ds = ds.sel(time=years).groupby("time.month").mean("time")
     return ds
@@ -294,6 +298,7 @@ def dictionary_to_dataset(
     list_ds = [
         aggregate_temporally(ds, experiment_id, time_aggregation) for ds in list_ds
     ]
+    list_ds = [ds for ds in list_ds if ds]  # remove None
     if experiment_family.lower() == "cmip5":
         # regrid all CMIP5 results to a fixed grid
         import xesmf as xe
