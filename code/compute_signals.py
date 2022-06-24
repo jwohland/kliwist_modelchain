@@ -299,7 +299,7 @@ def dictionary_to_dataset(
         aggregate_temporally(ds, experiment_id, time_aggregation) for ds in list_ds
     ]
     list_ds = [ds for ds in list_ds if ds]  # remove None
-    if experiment_family.lower() == "cmip5":
+    if experiment_family.lower() in ["cmip5", "cmip6"]:
         # regrid all CMIP5 results to a fixed grid
         import xesmf as xe
         import numpy as np
@@ -311,14 +311,22 @@ def dictionary_to_dataset(
             }
         )  # this resolution is representative for CMIP5 horizontal resolutions and avoids grid points at the pole
         for i in range(0, len(list_ds)):
-            regridder = xe.Regridder(
-                list_ds[i],
-                ds_typical,
-                "bilinear",
-                periodic=True,
-                ignore_degenerate=True,
-            )
-            list_ds[i] = regridder(list_ds[i])
+            try:
+                regridder = xe.Regridder(
+                    list_ds[i],
+                    ds_typical,
+                    "bilinear",
+                    periodic=True,
+                    ignore_degenerate=True,
+                )
+                list_ds[i] = regridder(list_ds[i])
+            except:
+                list_ds[i] = None
+                if experiment_family == "CMIP6":
+                    print("One simulation can not be regridded")  # this occurs once
+                else:
+                    print("Unexpected error")
+        list_ds = [x.drop("height", errors="ignore") for x in list_ds if x]
     return xr.concat(list_ds, dim="identifier")
 
 
