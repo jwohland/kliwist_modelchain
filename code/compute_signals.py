@@ -77,15 +77,17 @@ def get_dataset_dictionary(
         catalogue = "dkrz_cmip5_disk.json"
     elif experiment_family == "CORDEX":
         catalogue = "dkrz_cordex_disk.json"
+    elif experiment_family == "CMIP6":
+        catalogue = "dkrz_cmip6_disk.json"
     cat = intake.open_esm_datastore(link_catalogue + catalogue)
-    if experiment_family == "CMIP5":
+    if experiment_family in ["CMIP5", "CMIP6"]:
         subset = cat.search(
             variable=variable_id,
             frequency=frequency,
             experiment=experiment_id,
         )
         subset.df.to_csv(
-            "../input/CMIP5_" + experiment_id + "_" + variable_id + ".csv"
+            "../input/"+experiment_family+ "_" + experiment_id + "_" + variable_id + ".csv"
         )  # dump relevant parts of underlying catalogue
         if GCMs:  # filter for those GCMs that are of interest
             ds_dict = {}
