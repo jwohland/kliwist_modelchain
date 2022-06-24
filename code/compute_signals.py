@@ -106,6 +106,18 @@ def get_dataset_dictionary(
             ds_dict = subset.to_dataset_dict(
                 cdf_kwargs={"use_cftime": True, "chunks": {}}
             )
+    elif experiment_family == "CMIP6":
+        subset = cat.search(
+            variable_id=variable_id,
+            frequency=frequency,
+            experiment_id=experiment_id,
+            member_id=standard_ensemble_member,
+            activity_id="ScenarioMIP",
+        )
+        subset.df.to_csv(
+            "../input/CMIP6_" + experiment_id + "_" + variable_id + ".csv"
+        )  # dump relevant parts of underlying catalogue
+        ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
     elif experiment_family == "CORDEX":
         subset = cat.search(
             variable_id=variable_id,
@@ -287,7 +299,13 @@ def dictionary_to_dataset(
             }
         )  # this resolution is representative for CMIP5 horizontal resolutions and avoids grid points at the pole
         for i in range(0, len(list_ds)):
-            regridder = xe.Regridder(list_ds[i], ds_typical, "bilinear", periodic=True, ignore_degenerate=True)
+            regridder = xe.Regridder(
+                list_ds[i],
+                ds_typical,
+                "bilinear",
+                periodic=True,
+                ignore_degenerate=True,
+            )
             list_ds[i] = regridder(list_ds[i])
     return xr.concat(list_ds, dim="identifier")
 
@@ -330,9 +348,9 @@ def calculate_mean(
         "ICHEC.EC-EARTH.historical.Amon",
         "LASG-CESS.FGOALS-g2.historical.Amon",
         "NCAR.CCSM4.rcp26.Amon",
-        "NCAR.CCSM4.rcp45.Amon", 
-        "NOAA-GFDL.GFDL-CM2p1.rcp45.Amon", 
-        "ICHEC.EC-EARTH.rcp45.Amon", 
+        "NCAR.CCSM4.rcp45.Amon",
+        "NOAA-GFDL.GFDL-CM2p1.rcp45.Amon",
+        "ICHEC.EC-EARTH.rcp45.Amon",
     ]:
         try:
             del ds_dict[ignore_model]
