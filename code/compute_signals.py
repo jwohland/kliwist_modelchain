@@ -115,6 +115,10 @@ def get_dataset_dictionary(
             experiment_id=experiment_id,
             member_id="r1i1p1f1",
         )
+        if experiment_id == "historical":
+            subset = subset.search(activity_id="CMIP")
+        else:
+            subset = subset.search(activity_id="ScenarioMIP")
         subset.df.to_csv(
             "../input/CMIP6_" + experiment_id + "_" + variable_id + ".csv"
         )  # dump relevant parts of underlying catalogue
