@@ -11,7 +11,7 @@ import cartopy.crs as ccrs
 from scipy.stats import linregress
 
 
-def load_winds_tempgradients(metric="diff", full_ensemble=False):
+def load_winds_tempgradients(metric="diff", full_ensemble=False, experiment_family="CMIP5"):
     """
     open wind speed change and tas change data across all scenarios and concatenates them together.
 
@@ -29,10 +29,14 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False):
         )
 
     wind_list, gradient_list = [], []
-    for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
+    if experiment_family == "CMIP5":
+        experiment_ids = ["rcp26", "rcp45", "rcp85"]
+    elif experiment_family == "CMIP6":
+        experiment_ids = ["ssp126", "ssp245", "ssp370", "ssp585"]
+    for i, experiment_id in enumerate(experiment_ids):
         name = metric + "_" + experiment_id
-        ds_wind = xr.open_dataset(path_sfc + "cmip5_" + name + ".nc")
-        ds_tmp = xr.open_dataset(path_tas + "cmip5_" + name + ".nc")
+        ds_wind = xr.open_dataset(path_sfc + experiment_family.lower() +"_" + name + ".nc")
+        ds_tmp = xr.open_dataset(path_tas + experiment_family.lower() +"_" + name + ".nc")
         if full_ensemble:
             average_dims = ["lat", "lon"]
         else:
