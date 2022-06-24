@@ -24,7 +24,9 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False):
         path_tas = "../output/tas/all/"
     else:
         path_sfc = "../output/sfcWind/monthly/"
-        path_tas = "/work/ch0636/g300106/projects/kliwist_modelchain/output/tas/monthly/"
+        path_tas = (
+            "/work/ch0636/g300106/projects/kliwist_modelchain/output/tas/monthly/"
+        )
 
     wind_list, gradient_list = [], []
     for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
@@ -42,7 +44,9 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False):
             if not full_ensemble:
                 ds_wind = ds_wind.mean(dim="month")
             wind_list.append(
-                ds_wind.sel(identifier=identifier, drop=True).drop("height", errors="ignore")
+                ds_wind.sel(identifier=identifier, drop=True).drop(
+                    "height", errors="ignore"
+                )
             )
             gradient_list.append(T_gradient.sel(identifier=identifier, drop=True))
     return xr.concat(wind_list, dim="experiments"), xr.concat(
@@ -51,16 +55,17 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False):
 
 
 def remove_nans_winds_tempgradients(wind_ds, gradient_ds):
-     #remove nans in full_ensemble    
+    # remove nans in full_ensemble
     keep_experiments = list(wind_ds.experiments.values)
     for experiment in wind_ds.experiments:
-        if (wind_ds.sel({"experiments": experiment})["sfcWind"].isnull().any()) or (gradient_ds.sel({"experiments": experiment})["tas"].isnull().any()):
+        if (wind_ds.sel({"experiments": experiment})["sfcWind"].isnull().any()) or (
+            gradient_ds.sel({"experiments": experiment})["tas"].isnull().any()
+        ):
             keep_experiments.remove(experiment)
-            print("removing experiment number " + str(experiment) 
+            print("removing experiment number " + str(experiment))
     wind_ds = wind_ds.sel({"experiments": keep_experiments})
     gradient_ds = gradient_ds.sel({"experiments": keep_experiments})
     return wind_ds, gradient_ds
-
 
 
 def prepare_figure(scope):
@@ -88,9 +93,16 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=N
     """
     corr = xr.corr(wind_ds["sfcWind"], gradient_ds["tas"], dim="experiments")
     if not levels:
-                  levels = [-1, -0.8, -0.6, 0.6, 0.8, 1]  # mask out correlation smaller than r=0.6
+        levels = [
+            -1,
+            -0.8,
+            -0.6,
+            0.6,
+            0.8,
+            1,
+        ]  # mask out correlation smaller than r=0.6
 
-    # global correlation plot    
+    # global correlation plot
     for scope in ["Globe", "Europe"]:
         f, ax = prepare_figure(scope)
         corr.plot(
@@ -103,9 +115,16 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=N
         )
         add_coast_boarders(ax)
         if full_ensemble:
-            plt.savefig("../plots/tas_gradient/Correlation_map_" + scope + "_full_ensemble.jpeg", dpi=300)
+            plt.savefig(
+                "../plots/tas_gradient/Correlation_map_"
+                + scope
+                + "_full_ensemble.jpeg",
+                dpi=300,
+            )
         else:
-            plt.savefig("../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300)
+            plt.savefig(
+                "../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300
+            )
 
 
 def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False):
@@ -135,7 +154,9 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False):
             for lon in slope_proxy.lon:
                 y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
                 res = linregress(x.values, y.values)
-                if abs(res.rvalue) > 0.6:  # only report slopes if correlaion is non-negligible
+                if (
+                    abs(res.rvalue) > 0.6
+                ):  # only report slopes if correlaion is non-negligible
                     slope_tmp = res.slope
                 else:
                     slope_tmp = np.nan
@@ -156,9 +177,13 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False):
         add_coast_boarders(ax)
         if full_ensemble:
             plt.savefig(
-                    "../plots/tas_gradient/Amplitude_map_" + method + "_" + scope + "_full_ensemble.jpeg",
-                    dpi=300,
-                )
+                "../plots/tas_gradient/Amplitude_map_"
+                + method
+                + "_"
+                + scope
+                + "_full_ensemble.jpeg",
+                dpi=300,
+            )
         else:
             plt.savefig(
                 "../plots/tas_gradient/Amplitude_map_" + method + "_" + scope + ".jpeg",
