@@ -127,7 +127,7 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=N
             )
 
 
-def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False):
+def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False, min_abs_correlation=0.6):
     assert method in ["mean_changes", "extreme", "regression"]
     if method == "mean_changes":
         # A) based on mean changes
@@ -155,8 +155,8 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False):
                 y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
                 res = linregress(x.values, y.values)
                 if (
-                    abs(res.rvalue) > 0.6
-                ):  # only report slopes if correlaion is non-negligible
+                    abs(res.rvalue) > min_abs_correlation
+                ):  # only report slopes if correlation is non-negligible
                     slope_tmp = res.slope
                 else:
                     slope_tmp = np.nan
