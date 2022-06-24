@@ -113,8 +113,7 @@ def get_dataset_dictionary(
             variable_id=variable_id,
             frequency=frequency,
             experiment_id=experiment_id,
-            member_id=standard_ensemble_member,
-            activity_id="ScenarioMIP",
+            member_id="r1i1p1f1",
         )
         subset.df.to_csv(
             "../input/CMIP6_" + experiment_id + "_" + variable_id + ".csv"
@@ -227,10 +226,16 @@ def preprocess_cmip_dataset(ds, identifier):
     ds = ds.drop(
         ["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore"
     ).assign_coords({"identifier": identifier})
-    ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
-    ds = ds.assign_attrs(
-        ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
-    )
+    try:  # CMIP5
+        ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
+        ds = ds.assign_attrs(
+            ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
+        )
+    except:  #CMIP6
+        ds = ds.sel(member_id=ds.ensemble_member, drop=True).squeeze()
+        ds = ds.assign_attrs(
+            ensemble_information="r1i1p1f1"
+        )
     return ds
 
 
