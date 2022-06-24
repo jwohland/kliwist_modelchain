@@ -330,16 +330,20 @@ def dictionary_to_dataset(
     return xr.concat(list_ds, dim="identifier")
 
 
-def update_identifier(ds, experiment_id):
+def update_identifier(ds, experiment_id, experiment_family="CMIP5"):
     """
     Create joint identifier that is identical for historical and rcp period to be able to subtract them
     :param ds:
     :return:
     """
-    ds["identifier"] = [
-        x.replace("." + experiment_id, "") for x in ds.identifier.values
-    ]
-
+    if experiment_family == "CMIP5":
+        ds["identifier"] = [
+            x.replace("." + experiment_id, "") for x in ds.identifier.values
+        ]
+    elif experiment_family == "CMIP6":
+        ds["identifier"] = [
+            x.split(".")[1] for x in ds.identifier.values
+        ]
 
 def calculate_mean(
     experiment_family,
