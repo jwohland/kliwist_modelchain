@@ -114,6 +114,7 @@ def get_dataset_dictionary(
             frequency=frequency,
             experiment_id=experiment_id,
             member_id="r1i1p1f1",
+            table_id="Amon",
         )
         if experiment_id == "historical":
             subset = subset.search(activity_id="CMIP")
