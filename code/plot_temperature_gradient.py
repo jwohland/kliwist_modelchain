@@ -50,6 +50,19 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False):
     )
 
 
+def remove_nans_winds_tempgradients(wind_ds, gradient_ds):
+     #remove nans in full_ensemble    
+    keep_experiments = list(wind_ds.experiments.values)
+    for experiment in wind_ds.experiments:
+        if (wind_ds.sel({"experiments": experiment})["sfcWind"].isnull().any()) or (gradient_ds.sel({"experiments": experiment})["tas"].isnull().any()):
+            keep_experiments.remove(experiment)
+            print("removing experiment number " + str(experiment) 
+    wind_ds = wind_ds.sel({"experiments": keep_experiments})
+    gradient_ds = gradient_ds.sel({"experiments": keep_experiments})
+    return wind_ds, gradient_ds
+
+
+
 def prepare_figure(scope):
     """
     Prepare Figure with grid ready to plot either global or European data
@@ -65,7 +78,7 @@ def prepare_figure(scope):
     return f, ax
 
 
-def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False):
+def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=None):
     """
     Calculates the correlation between changes in wind gradient and wind speeds and plots
     global correlation map and European correlation map
@@ -73,22 +86,11 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False):
     :param gradient_ds:
     :return:
     """
-    
-    #remove nans in full_ensemble
-    if full_ensemble:
-        keep_experiments = list(wind_ds.experiments.values)
-        for experiment in wind_ds.experiments:
-            if wind_ds.sel({"experiments": experiment})["sfcWind"].isnull().any():
-                keep_experiments.remove(experiment)
-        wind_ds = wind_ds.sel({"experiments": keep_experiments})
-        gradient_ds = gradient_ds.sel({"experiments": keep_experiments})
-        
     corr = xr.corr(wind_ds["sfcWind"], gradient_ds["tas"], dim="experiments")
-    levels = [-1, -0.8, -0.6, 0.6, 0.8, 1]  # mask out correlation smaller than r=0.6
-    # global correlation plot
+    if not levels:
+                  levels = [-1, -0.8, -0.6, 0.6, 0.8, 1]  # mask out correlation smaller than r=0.6
 
-    
-    
+    # global correlation plot    
     for scope in ["Globe", "Europe"]:
         f, ax = prepare_figure(scope)
         corr.plot(
