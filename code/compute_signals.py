@@ -397,16 +397,32 @@ def calculate_mean(
     return ds
 
 
-def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
+def calculate_signals(time_aggregation="annual", variable_id="sfcWind", full_ensemble=False):
+    """
+    Calculates 20y mean wind speed at the end of the historical and future periods.
+
+    :param time_aggregation: "annual" or "monthly": Whether annual means or monthly means are requested
+    :param variable_id: name of the variable, for example, "sfcWind" or "tas"
+    :param full_ensemble: if false, only use those models that were downscaled in EURO-CORDEX. If true, use full ensemble
+    :return:
+    """
     out_path = "../output/" + variable_id + "/"
     if time_aggregation == "monthly":
         out_path += "monthly/"
-    for experiment_family in ["CORDEX", "CMIP5"]:
-        if experiment_family == "CMIP5":
+    if full_ensemble:
+        experiment_families = ["CMIP5", "CMIP6"]
+        out_path += "all/"
+    else:
+        experiment_families = ["CORDEX", "CMIP5"]
+    for experiment_family in experiment_families:
+        if full_ensemble:
+            GCMs, per_RCM = None, False
+        elif experiment_family == "CMIP5":  # only those CMIP5 models that were downscaled in EURO-CORDEX
             GCMs = get_gcm_list("all")
             per_RCM = False
         else:
-            GCMs, per_RCM = None, True
+            GCMs, per_RCM = None, True  # EURO-CORDEX
+
         ds_ref = calculate_mean(
             experiment_family,
             variable_id,
@@ -420,9 +436,14 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
         ds_ref.to_netcdf(
             out_path + experiment_family.lower() + "_mean_historical.nc"
         )  # save mean historical
-        update_identifier(ds_ref, "historical")
-        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
-            if experiment_family == "CMIP5":
+        update_identifier(ds_ref, "historical", experiment_family=experiment_family)
+        if experiment_family == "CMIP6":
+            experiment_ids = ["ssp126", "ssp245", "ssp370", "ssp585"]
+        else:
+            experiment_ids = ["rcp85", "rcp45", "rcp26"]
+
+        for experiment_id in experiment_ids:
+            if experiment_family == "CMIP5" and not full_ensemble:
                 GCMs = get_gcm_list(experiment_id)
             ds_future = calculate_mean(
                 experiment_family,
@@ -437,7 +458,7 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
             ds_future.to_netcdf(
                 out_path + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
             )  # save mean future
-            update_identifier(ds_future, experiment_id)
+            update_identifier(ds_future, experiment_id, experiment_family)
 
             # calculate and save difference
             diff = ds_future - ds_ref
