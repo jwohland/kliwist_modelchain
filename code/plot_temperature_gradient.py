@@ -11,7 +11,9 @@ import cartopy.crs as ccrs
 from scipy.stats import linregress
 
 
-def load_winds_tempgradients(metric="diff", full_ensemble=False, experiment_family="CMIP5"):
+def load_winds_tempgradients(
+    metric="diff", full_ensemble=False, experiment_family="CMIP5"
+):
     """
     open wind speed change and tas change data across all scenarios and concatenates them together.
 
@@ -35,8 +37,12 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False, experiment_fami
         experiment_ids = ["ssp126", "ssp245", "ssp370", "ssp585"]
     for i, experiment_id in enumerate(experiment_ids):
         name = metric + "_" + experiment_id
-        ds_wind = xr.open_dataset(path_sfc + experiment_family.lower() +"_" + name + ".nc")
-        ds_tmp = xr.open_dataset(path_tas + experiment_family.lower() +"_" + name + ".nc")
+        ds_wind = xr.open_dataset(
+            path_sfc + experiment_family.lower() + "_" + name + ".nc"
+        )
+        ds_tmp = xr.open_dataset(
+            path_tas + experiment_family.lower() + "_" + name + ".nc"
+        )
         if full_ensemble:
             average_dims = ["lat", "lon"]
         else:
@@ -57,7 +63,6 @@ def load_winds_tempgradients(metric="diff", full_ensemble=False, experiment_fami
                 )
             except KeyError:
                 print(identifier + " does not provide sfcWind and tas")
-
 
     return xr.concat(wind_list, dim="experiments"), xr.concat(
         gradient_list, dim="experiments"
@@ -93,7 +98,9 @@ def prepare_figure(scope):
     return f, ax
 
 
-def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=None):
+def correlation_compute_plot(
+    wind_ds, gradient_ds, full_ensemble=False, levels=None, generation=""
+):
     """
     Calculates the correlation between changes in wind gradient and wind speeds and plots
     global correlation map and European correlation map
@@ -126,9 +133,11 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=N
         add_coast_boarders(ax)
         if full_ensemble:
             plt.savefig(
-                "../plots/tas_gradient/Correlation_map_"
+                "../plots/tas_gradient/full_ensemble/Correlation_map_"
                 + scope
-                + "_full_ensemble.jpeg",
+                + "_full_ensemble_"
+                + generation
+                + ".jpeg",
                 dpi=300,
             )
         else:
@@ -137,7 +146,9 @@ def correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=False, levels=N
             )
 
 
-def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False, min_abs_correlation=0.6):
+def amplitude_compute_plot(
+    wind_ds, gradient_ds, method, full_ensemble=False, min_abs_correlation=0.6, generation=""
+):
     assert method in ["mean_changes", "extreme", "regression"]
     if method == "mean_changes":
         # A) based on mean changes
@@ -187,11 +198,13 @@ def amplitude_compute_plot(wind_ds, gradient_ds, method, full_ensemble=False, mi
         add_coast_boarders(ax)
         if full_ensemble:
             plt.savefig(
-                "../plots/tas_gradient/Amplitude_map_"
+                "../plots/tas_gradient/full_ensemble/Amplitude_map_"
                 + method
                 + "_"
                 + scope
-                + "_full_ensemble.jpeg",
+                + "_full_ensemble_"
+                + generation
+                + ".jpeg",
                 dpi=300,
             )
         else:
