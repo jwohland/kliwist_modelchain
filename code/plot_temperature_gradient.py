@@ -270,13 +270,16 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
 
 
 def make_all_plots():
+    ###
+    # A: EURO-CORDEX / CMIP5 models driving EURO-CORDEX
+    ###
     wind_ds, gradient_ds = load_winds_tempgradients()
 
     # correlation maps
     correlation_compute_plot(wind_ds, gradient_ds)
 
     # Proxies for amplitude of change
-    amplitude_compute_plot(wind_ds, gradient_ds, method="regression")
+    amplitude_compute_plot(wind_ds, gradient_ds)
 
     # Country level scatter plots
     for country in [
@@ -292,3 +295,17 @@ def make_all_plots():
     # add couple of countries without coast
     for country in ["Czechia", "Hungary"]:
         scatter_compute_plot_country(country, offshore=False)
+
+    ###
+    # B: Full CMIP5 and CMIP6 ensembles
+    ###
+
+    for experiment_family in ["CMIP5", "CMIP6"]:
+        wind_ds, gradient_ds = load_winds_tempgradients(full_ensemble=True, experiment_family=experiment_family)
+        wind_ds, gradient_ds = remove_nans_winds_tempgradients(wind_ds, gradient_ds)
+
+        # correlation maps
+        correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family)
+
+        # Proxies for amplitude of change
+        amplitude_compute_plot(wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family)
