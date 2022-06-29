@@ -147,46 +147,29 @@ def correlation_compute_plot(
 
 
 def amplitude_compute_plot(
-    wind_ds, gradient_ds, method, full_ensemble=False, min_abs_correlation=0.6, generation=""
+    wind_ds, gradient_ds, full_ensemble=False, min_abs_correlation=0.6, generation=""
 ):
-    assert method in ["mean_changes", "extreme", "regression"]
-    if method == "mean_changes":
-        # A) based on mean changes
-        delta_wind = wind_ds["sfcWind"].mean(dim="experiments")
-        delta_gradient = gradient_ds["tas"].mean(dim="experiments")
-        slope_proxy = delta_wind / delta_gradient
-        label = "Wind change per gradient change proxy  [m/s /K]"
-        levels = np.linspace(-0.1, 0.1, 11)
-    elif method == "extreme":
-        # B) based on extreme cases
-        strongest_change = gradient_ds[
-            "tas"
-        ].argmin()  # minimum is correct because gradient change negative
-        slope_proxy = wind_ds["sfcWind"].sel(experiments=strongest_change)
-        label = "Wind change in max gradient change experiment [m/s]"
-        levels = np.linspace(-1, 1, 11)
-    elif method == "regression":
-        # there is probably a more efficient way to implement this using .apply but it doesn't seem worthwhile to dump a lot of time here
-        slope_proxy = wind_ds["sfcWind"].isel({"experiments": 1}) * 0
-        # loop over lats
-        x = gradient_ds["tas"]
-        for lat in slope_proxy.lat:
-            # loop over lons
-            for lon in slope_proxy.lon:
-                y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
-                res = linregress(x.values, y.values)
-                if (
-                    abs(res.rvalue) > min_abs_correlation
-                ):  # only report slopes if correlation is non-negligible
-                    slope_tmp = res.slope
-                else:
-                    slope_tmp = np.nan
-                slope_proxy.loc[{"lat": lat, "lon": lon}] = slope_tmp
-        label = "Wind change per gradient change  [m/s /K]"
-        levels = np.linspace(-0.1, 0.1, 11)
+    # Calculates slopes pointwise for each lat-lon combination
+    # there are faster ways of doing this using .apply but it doesn't seem worthwhile to dump a lot of time here
+    # because this is already fast enough
+    slopes = wind_ds["sfcWind"].isel({"experiments": 1}) * 0
+    x = gradient_ds["tas"]
+    for lat in slopes.lat:
+        for lon in slopes.lon:
+            y = wind_ds["sfcWind"].sel({"lat": lat, "lon": lon})
+            res = linregress(x.values, y.values)
+            if (
+                abs(res.rvalue) > min_abs_correlation
+            ):  # only report slopes if correlation is non-negligible  # todo maybe replace with significance check
+                slope_tmp = res.slope
+            else:
+                slope_tmp = np.nan
+            slopes.loc[{"lat": lat, "lon": lon}] = slope_tmp
+    label = "Wind change per gradient change  [m/s /K]"
+    levels = np.linspace(-0.1, 0.1, 11)
     for scope in ["Globe", "Europe"]:
         f, ax = prepare_figure(scope)
-        slope_proxy.plot(
+        slopes.plot(
             ax=ax,
             levels=levels,
             extend="both",
@@ -199,8 +182,6 @@ def amplitude_compute_plot(
         if full_ensemble:
             plt.savefig(
                 "../plots/tas_gradient/full_ensemble/Amplitude_map_"
-                + method
-                + "_"
                 + scope
                 + "_full_ensemble_"
                 + generation
@@ -209,7 +190,7 @@ def amplitude_compute_plot(
             )
         else:
             plt.savefig(
-                "../plots/tas_gradient/Amplitude_map_" + method + "_" + scope + ".jpeg",
+                "../plots/tas_gradient/Amplitude_map_" + scope + ".jpeg",
                 dpi=300,
             )
 
