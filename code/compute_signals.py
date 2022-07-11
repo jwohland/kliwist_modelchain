@@ -497,7 +497,7 @@ def compute_monthly_stability_change():
                 )
                 ds_stability = (
                     (ds_tas["tas"] - ds_ts["ts"])
-                    .drop(["identifier", "member"])
+                    .drop(["identifier", "member"], errors="ignore")
                     .to_dataset(name="tas-ts")
                     .squeeze()
                 )
