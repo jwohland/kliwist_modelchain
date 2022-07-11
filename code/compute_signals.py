@@ -72,7 +72,9 @@ def get_dataset_dictionary(
     :param GCMs: list of GCMs that are being searched for. Only implemented for CMIP5
     :return:
     """
-    link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster
+    link_catalogue = (
+        "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster
+    )
     if experiment_family == "CMIP5":
         catalogue = "dkrz_cmip5_disk.json"
     elif experiment_family == "CMIP6":
@@ -236,11 +238,9 @@ def preprocess_cmip_dataset(ds, identifier):
         ds = ds.assign_attrs(
             ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
         )
-    except:  #CMIP6
+    except:  # CMIP6
         ds = ds.sel(member_id=ds.member_id, drop=True).squeeze()
-        ds = ds.assign_attrs(
-            ensemble_information="r1i1p1f1"
-        )
+        ds = ds.assign_attrs(ensemble_information="r1i1p1f1")
     return ds
 
 
@@ -346,9 +346,8 @@ def update_identifier(ds, experiment_id, experiment_family="CMIP5"):
             x.replace("." + experiment_id, "") for x in ds.identifier.values
         ]
     elif experiment_family == "CMIP6":
-        ds["identifier"] = [
-            x.split(".")[1] for x in ds.identifier.values
-        ]
+        ds["identifier"] = [x.split(".")[1] for x in ds.identifier.values]
+
 
 def calculate_mean(
     experiment_family,
@@ -397,7 +396,9 @@ def calculate_mean(
     return ds
 
 
-def calculate_signals(time_aggregation="annual", variable_id="sfcWind", full_ensemble=False):
+def calculate_signals(
+    time_aggregation="annual", variable_id="sfcWind", full_ensemble=False
+):
     """
     Calculates 20y mean wind speed at the end of the historical and future periods.
 
@@ -417,7 +418,9 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind", full_ens
     for experiment_family in experiment_families:
         if full_ensemble:
             GCMs, per_RCM = None, False
-        elif experiment_family == "CMIP5":  # only those CMIP5 models that were downscaled in EURO-CORDEX
+        elif (
+            experiment_family == "CMIP5"
+        ):  # only those CMIP5 models that were downscaled in EURO-CORDEX
             GCMs = get_gcm_list("all")
             per_RCM = False
         else:
@@ -492,7 +495,12 @@ def compute_monthly_stability_change():
                     + experiment_id
                     + ".nc"
                 )
-                ds_stability = (ds_tas["tas"] - ds_ts["ts"]).to_dataset(name="tas-ts")
+                ds_stability = (
+                    (ds_tas["tas"] - ds_ts["ts"])
+                    .drop(["identifier", "member"])
+                    .to_dataset(name="tas-ts")
+                    .squeeze()
+                )
                 ds_stability.to_netcdf(
                     "../output/tas-ts/monthly/"
                     + experiment_family.lower()
