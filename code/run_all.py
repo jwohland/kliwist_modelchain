@@ -13,10 +13,13 @@ Calculations
 # Compute changes in 10m wind speeds
 compute_signals.calculate_signals(time_aggregation="annual", variable_id="sfcWind")
 compute_signals.calculate_signals(time_aggregation="monthly", variable_id="sfcWind")
-# compute changes in near-surface air temperature (tas), skin temperature (ts) and sea ice cover (sic)  todo check that sic is really sea ice cover
+compute_signals.calculate_signals("annual", "sfcWind", full_ensemble=True)
+# compute changes in near-surface air temperature (tas), skin temperature (ts) and sea ice cover (sic)
 for variable in ["tas", "ts", "sic"]:
     print(variable)
     compute_signals.calculate_signals(time_aggregation="monthly", variable_id=variable)
+# compute tas changes for full ensemble
+compute_signals.calculate_signals("annual", "tas", full_ensemble=True)
 # compute changes in tas - ts, a proxy for stability change
 compute_signals.compute_monthly_stability_change()
 # Compute country aggregates
