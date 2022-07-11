@@ -31,6 +31,8 @@ Plots
 """
 # Maps of 10m wind speeds
 plot_s10_maps.make_s10_maps()
+# Aggregate plots
+plot_s10_maps.make_aggregate_monthly_plots("tas-ts", "mean", ["historical", "rcp45", "rcp85"])
 # Scatter plots of wind change per country
 plot_s10_scatter.make_s10_scatter(onshore=True)
 plot_s10_scatter.make_s10_scatter(onshore=False)

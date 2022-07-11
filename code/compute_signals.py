@@ -72,7 +72,7 @@ def get_dataset_dictionary(
     :param GCMs: list of GCMs that are being searched for. Only implemented for CMIP5
     :return:
     """
-    link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster #todo generalize
+    link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster
     if experiment_family == "CMIP5":
         catalogue = "dkrz_cmip5_disk.json"
     elif experiment_family == "CMIP6":

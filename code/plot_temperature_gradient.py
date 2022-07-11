@@ -160,7 +160,7 @@ def amplitude_compute_plot(
             res = linregress(x.values, y.values)
             if (
                 abs(res.rvalue) > min_abs_correlation
-            ):  # only report slopes if correlation is non-negligible  # todo maybe replace with significance check
+            ):  # only report slopes if correlation is non-negligible
                 slope_tmp = res.slope
             else:
                 slope_tmp = np.nan
