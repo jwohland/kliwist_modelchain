@@ -77,15 +77,22 @@ def prepare_country_geometries(onshore=True):
     return regs.loc[countries].geometry
 
 
-def make_averager_instance(onshore):
+def make_averager_instance(onshore, experiment_family="CORDEX", ds=None):
     """
     Uses clean grid of EUROCORDEX domain with all the metadata to
     instantiate spatial averaging instance
     :return:
     """
-    eur11 = cx.cordex_domain("EUR-11", add_vertices=True)
     country_geometries = prepare_country_geometries(onshore)
-    savg = xe.SpatialAverager(eur11, country_geometries, geom_dim_name="country")
+    if experiment_family == "CORDEX":
+        eur11 = cx.cordex_domain("EUR-11", add_vertices=True)
+        savg = xe.SpatialAverager(eur11, country_geometries, geom_dim_name="country")
+    elif experiment_family == "CMIP5":
+        # add bounds to lat and lon to enable conservative remapping
+        from numpy import arange
+        ds["lat_b"] = arange(-90, 91, 1.5)
+        ds["lon_b"] = arange(0, 362, 1.75) - 1.75/2
+        savg = xe.SpatialAverager(ds, country_geometries, geom_dim_name="country")
     return savg
 
 
@@ -93,9 +100,7 @@ def calculate_aggregate(ds, experiment_family, onshore):
     if experiment_family == "CORDEX":
         savg = make_averager_instance(onshore)
     elif experiment_family == "CMIP5":
-        savg = xe.SpatialAverager(
-            ds, prepare_country_geometries(onshore), geom_dim_name="country"
-        )
+        savg = make_averager_instance(onshore, "CMIP5", ds)
     ds_agg = savg(ds)
     if onshore:
         countries = COUNTRIES
