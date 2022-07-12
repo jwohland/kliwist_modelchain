@@ -77,6 +77,17 @@ def prepare_country_geometries(onshore=True):
     return regs.loc[countries].geometry
 
 
+def add_CMIP5_bounds(ds):
+    """
+    Adding bounds to the 1.5° x 1.75° grid to which CMIP5 data is regridded
+    :param ds:
+    :return:
+    """
+    from numpy import arange
+    ds["lat_b"] = arange(-90, 91, 1.5)
+    ds["lon_b"] = arange(0, 362, 1.75) - 1.75 / 2
+    return ds
+
 def make_averager_instance(onshore, experiment_family="CORDEX", ds=None):
     """
     Instantiates xesmf spatial averager.
@@ -90,9 +101,7 @@ def make_averager_instance(onshore, experiment_family="CORDEX", ds=None):
         savg = xe.SpatialAverager(eur11, country_geometries, geom_dim_name="country")
     elif experiment_family == "CMIP5":
         # add bounds to lat and lon to enable conservative remapping
-        from numpy import arange
-        ds["lat_b"] = arange(-90, 91, 1.5)
-        ds["lon_b"] = arange(0, 362, 1.75) - 1.75/2
+        ds = add_CMIP5_bounds(ds)
         savg = xe.SpatialAverager(ds, country_geometries, geom_dim_name="country")
     return savg
 

@@ -4,9 +4,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from plot_s10_maps import SUBPLOT_KW
+from plot_s10_maps import SUBPLOT_KW, FIG_PARAMS
 from scipy.stats import pearsonr, spearmanr
-from plot_s10_maps import FIG_PARAMS
+from compute_country_aggregates import add_CMIP5_bounds
 
 SCENARIO_DICT = {"IMAGE": "rcp26", "MINICAM": "rcp45", "MESSAGE": "rcp85"}
 EXTENT = SUBPLOT_KW["subplot_kw"]["extent"]
@@ -45,6 +45,7 @@ def load_CMIP5():
             .squeeze()
         )
         diff = diff.assign_coords({"experiment_id": experiment_id})
+        diff = add_CMIP5_bounds(diff)
         CMIP5_list.append(diff)
     ds = xr.concat(CMIP5_list, dim="experiment_id")
     ds = ds.cf.add_bounds(
