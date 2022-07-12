@@ -7,6 +7,7 @@ import plot_s10_scatter
 import plot_s10_country_heatmaps
 import analyze_LUCAS_profiles
 import plot_temperature_gradient
+import compute_plot_pattern_correlation
 """
 Calculations
 """
@@ -41,6 +42,8 @@ plot_s10_country_heatmaps.make_s10_heatmaps(onshore=True)
 plot_s10_country_heatmaps.make_s10_heatmaps(onshore=False)
 # Maps of land use change forcing data
 plot_lu_maps.make_LUH_maps()
+# Scatter plot of land use forcing vs wind speed change
+compute_plot_pattern_correlation.make_plot()
 # Temperature gradient plots
 plot_temperature_gradient.make_all_plots()
 

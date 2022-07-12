@@ -114,16 +114,17 @@ def plot_scatter(df, experiment_family):
     plt.clf()
 
 
-# Load data
-ds_LUH = load_LUH()
-ds_CMIP5 = load_CMIP5()
+def make_plot():
+    # Load data
+    ds_LUH = load_LUH()
+    ds_CMIP5 = load_CMIP5()
 
-# crop and regrid data
-ds_LUH = select_rectangle(
-    regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative")
-)
-ds_CMIP5 = select_rectangle(ds_CMIP5)
+    # crop and regrid data
+    ds_LUH = select_rectangle(
+        regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative")
+    )
+    ds_CMIP5 = select_rectangle(ds_CMIP5)
 
 
-df = convert_to_dataframe(ds_LUH, ds_CMIP5, 0.01)
-plot_scatter(df, "CMIP5")
+    df = convert_to_dataframe(ds_LUH, ds_CMIP5, 0.01)
+    plot_scatter(df, "CMIP5")
