@@ -223,7 +223,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
             ds_wind = ds_wind.mean(dim="country").drop(["height"])
         else:
             ds_wind = ds_wind.sel(country=country).drop(
-                ["height", "lon", "lat", "country"]
+                ["height", "lon", "lat", "country"], errors="ignore"
             )
         ds_wind["experiment_id"] = experiment_id
         wind_df_list.append(ds_wind.to_dataframe())
@@ -298,11 +298,17 @@ def make_all_plots():
     ###
 
     for experiment_family in ["CMIP5", "CMIP6"]:
-        wind_ds, gradient_ds = load_winds_tempgradients(full_ensemble=True, experiment_family=experiment_family)
+        wind_ds, gradient_ds = load_winds_tempgradients(
+            full_ensemble=True, experiment_family=experiment_family
+        )
         wind_ds, gradient_ds = remove_nans_winds_tempgradients(wind_ds, gradient_ds)
 
         # correlation maps
-        correlation_compute_plot(wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family)
+        correlation_compute_plot(
+            wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family
+        )
 
         # Proxies for amplitude of change
-        amplitude_compute_plot(wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family)
+        amplitude_compute_plot(
+            wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family
+        )
