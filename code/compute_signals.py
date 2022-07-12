@@ -341,7 +341,7 @@ def update_identifier(ds, experiment_id, experiment_family="CMIP5"):
     :param ds:
     :return:
     """
-    if experiment_family == "CMIP5":
+    if experiment_family in ["CMIP5", "CORDEX"]:
         ds["identifier"] = [
             x.replace("." + experiment_id, "") for x in ds.identifier.values
         ]
