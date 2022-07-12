@@ -94,7 +94,7 @@ def convert_to_dataframe(ds_LUH, ds_CMIP5, threshold=0.01):
     """
     # make and populate dataframe
     ds_both = xr.merge([ds_LUH, ds_CMIP5])
-    ds_both = ds_both.drop(["lat_bounds", "lon_bounds", "height"])
+    ds_both = ds_both.drop(["lat_bounds", "lon_bounds", "height", "lat_b", "lon_b"], errors="ignore")
     df = ds_both.to_dataframe()
     df = df.reset_index()
     df = df[np.abs(df.gothr+df.gsecd) > threshold]  # only consider grid cells with at least 1% change
