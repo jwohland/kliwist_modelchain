@@ -371,19 +371,19 @@ def calculate_mean(
     )
     # manual fixes for some datasets
     # ICHEC-EC-EARTH throws a key Error for tas. Remove manually for now.
-
-    for ignore_model in [
-        "ICHEC.EC-EARTH.historical.Amon",
-        "LASG-CESS.FGOALS-g2.historical.Amon",
-        "NCAR.CCSM4.rcp26.Amon",
-        "NCAR.CCSM4.rcp45.Amon",
-        "NOAA-GFDL.GFDL-CM2p1.rcp45.Amon",
-        "ICHEC.EC-EARTH.rcp45.Amon",
-    ]:
-        try:
-            del ds_dict[ignore_model]
-        except:
-            """"""
+    if variable_id == "tas":
+        for ignore_model in [
+            "ICHEC.EC-EARTH.historical.Amon",
+            "LASG-CESS.FGOALS-g2.historical.Amon",
+            "NCAR.CCSM4.rcp26.Amon",
+            "NCAR.CCSM4.rcp45.Amon",
+            "NOAA-GFDL.GFDL-CM2p1.rcp45.Amon",
+            "ICHEC.EC-EARTH.rcp45.Amon",
+        ]:
+            try:
+                del ds_dict[ignore_model]
+            except:
+                """"""
 
     # in the large CMIP5 ensemble some tas are reported at 1.5m and some at 2m
     if variable_id == "tas":
