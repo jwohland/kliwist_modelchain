@@ -79,8 +79,9 @@ def prepare_country_geometries(onshore=True):
 
 def make_averager_instance(onshore, experiment_family="CORDEX", ds=None):
     """
-    Uses clean grid of EUROCORDEX domain with all the metadata to
-    instantiate spatial averaging instance
+    Instantiates xesmf spatial averager.
+    For EURO-CORDEX, this function uses clean grid of EUROCORDEX domain with all the metadata to
+    For CMIP5, lat and lon bounds are manually added
     :return:
     """
     country_geometries = prepare_country_geometries(onshore)
@@ -97,6 +98,14 @@ def make_averager_instance(onshore, experiment_family="CORDEX", ds=None):
 
 
 def calculate_aggregate(ds, experiment_family, onshore):
+    """
+    Aggregate datasets to country levels. Involves creating a spatial averager instance
+    that needs information about the bounds of all grid boxes.
+    :param ds:
+    :param experiment_family:
+    :param onshore:
+    :return:
+    """
     if experiment_family == "CORDEX":
         savg = make_averager_instance(onshore)
     elif experiment_family == "CMIP5":
