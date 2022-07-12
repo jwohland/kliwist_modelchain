@@ -96,7 +96,7 @@ def get_dataset_dictionary(
             for GCM in GCMs:
                 ensemble_member = standard_ensemble_member
                 if GCM == "EC-EARTH":
-                    ensemble_member = "r7i1p1"  # EC-Earth doesn't provide all scenarios in realization r1i1p1. Use r7i1p1 instead where all scenarios are provided.
+                    ensemble_member = "r8i1p1"  # EC-Earth doesn't provide all scenarios in realization r1i1p1. Use r8i1p1 instead where all scenarios are provided.
                 try:
                     ds_dict.update(
                         subset.search(
