@@ -220,7 +220,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
         name = metric + "_" + experiment_id
         ds_wind = xr.open_dataset(path_sfc + "country_cmip5_" + name + ".nc")
         if country == "all":
-            ds_wind = ds_wind.mean(dim="country").drop(["height"])
+            ds_wind = ds_wind.mean(dim="country").drop(["height"], errors="ignore")
         else:
             ds_wind = ds_wind.sel(country=country).drop(
                 ["height", "lon", "lat", "country"], errors="ignore"
@@ -233,7 +233,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
         T_equator = ds_tmp.sel(lat=slice(-10, 10)).mean(dim=["lat", "lon", "month"])
         T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=["lat", "lon", "month"])
         T_gradient = T_equator - T_pole
-        T_gradient = T_gradient.drop("height")
+        T_gradient = T_gradient.drop("height", errors="ignore")
         T_gradient["experiment_id"] = experiment_id
         tas_df_list.append(T_gradient.to_dataframe())
 
