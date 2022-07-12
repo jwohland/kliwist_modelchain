@@ -540,9 +540,9 @@ def make_aggregate_monthly_plots(
 
 
 def make_s10_maps():
-    #make_individual_plots()  # wind speed change per GCM and RCM
-    #make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
-    #make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
+    make_individual_plots()  # wind speed change per GCM and RCM
+    make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
+    make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
     for variable in [
         "sfcWind",
         "tas",
