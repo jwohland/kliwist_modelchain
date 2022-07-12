@@ -42,18 +42,17 @@ def load_winds_tempgradients(
             path_tas + experiment_family.lower() + "_" + name + ".nc"
         )
         if full_ensemble:
-            average_dims = ["lat", "lon"]
+            tmp_average_dims = ["lat", "lon"]
         else:
-            average_dims = ["lat", "lon", "month"]
-        T_equator = ds_tmp.sel(lat=slice(-10, 10)).mean(dim=average_dims)
-        T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=average_dims)
+            tmp_average_dims = ["lat", "lon", "month"]
+            ds_wind = ds_wind.mean(dim="month")  #
+        T_equator = ds_tmp.sel(lat=slice(-10, 10)).mean(dim=tmp_average_dims)
+        T_pole = ds_tmp.sel(lat=slice(70, 90)).mean(dim=tmp_average_dims)
         T_gradient = T_equator - T_pole
         for identifier in ds_wind.identifier.values:
             # check that model also provides tas
             try:
                 gradient_list.append(T_gradient.sel(identifier=identifier, drop=True))
-                if not full_ensemble:
-                    ds_wind = ds_wind.mean(dim="month")
                 wind_list.append(
                     ds_wind.sel(identifier=identifier, drop=True).drop(
                         "height", errors="ignore"
