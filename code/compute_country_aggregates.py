@@ -110,7 +110,7 @@ def calculate_aggregate(ds, experiment_family, onshore):
         savg = make_averager_instance(onshore)
     elif experiment_family == "CMIP5":
         savg = make_averager_instance(onshore, "CMIP5", ds)
-    ds_agg = savg(ds)
+    ds_agg = savg(ds).drop(["lat_b", "lon_b"], errors="ignore")  # remove bounds added in CMIP averaging that cause issues downstream
     if onshore:
         countries = COUNTRIES
     else:
