@@ -105,6 +105,7 @@ def plot_scatter(df, experiment_family):
     # plotting
     R = pearsonr(df["gothr+gsecd"], df["sfcWind"])[0]
     rho = spearmanr(df["gothr+gsecd"], df["sfcWind"])[0]
+    plt.clf()
     g = sns.scatterplot(x="gothr+gsecd", y="sfcWind", hue="experiment_id", data=df, alpha=0.7)
     g.legend_.set_title(None)
     plt.xlabel("Change in primary plus secondary land [fraction of grid cell]")
@@ -112,7 +113,6 @@ def plot_scatter(df, experiment_family):
     plt.title(experiment_family + ", r=" + str(np.round(R,2))+ ", rho=" + str(np.round(rho,2)))
     plt.tight_layout()
     plt.savefig("../plots/LUH/pattern_correlation.png", **FIG_PARAMS)
-    plt.clf()
 
 
 def make_plot():
