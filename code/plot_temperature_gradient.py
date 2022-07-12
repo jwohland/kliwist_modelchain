@@ -26,9 +26,7 @@ def load_winds_tempgradients(
         path_tas = "../output/tas/all/"
     else:
         path_sfc = "../output/sfcWind/monthly/"
-        path_tas = (
-            "/work/ch0636/g300106/projects/kliwist_modelchain/output/tas/monthly/"
-        )
+        path_tas = "../output/tas/monthly/"
 
     wind_list, gradient_list = [], []
     if experiment_family == "CMIP5":
