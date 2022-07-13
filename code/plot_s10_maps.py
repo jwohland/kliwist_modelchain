@@ -535,7 +535,7 @@ def make_aggregate_monthly_plots(
             + "_"
             + variable_id
             + "_monthly.png",
-            **FIGmak_PARAMS
+            **FIG_PARAMS
         )
 
 
