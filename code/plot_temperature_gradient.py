@@ -304,11 +304,22 @@ def make_all_plots():
         wind_ds, gradient_ds = remove_nans_winds_tempgradients(wind_ds, gradient_ds)
 
         # correlation maps
+        full_ensemble_levels = [
+            np.round(x, 1) for x in np.arange(-1, 1, 0.2) if abs(x) > 0.3
+        ]  # i.e. [-1, -.8 ... 1] excluding -0.2 .. 0.2
         correlation_compute_plot(
-            wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family
+            wind_ds,
+            gradient_ds,
+            full_ensemble=True,
+            generation=experiment_family,
+            levels=full_ensemble_levels,
         )
 
         # Proxies for amplitude of change
         amplitude_compute_plot(
-            wind_ds, gradient_ds, full_ensemble=True, generation=experiment_family
+            wind_ds,
+            gradient_ds,
+            full_ensemble=True,
+            generation=experiment_family,
+            min_abs_correlation=0.4,
         )
