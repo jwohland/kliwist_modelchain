@@ -535,7 +535,7 @@ def make_aggregate_monthly_plots(
             + "_"
             + variable_id
             + "_monthly.png",
-            **FIG_PARAMS
+            **FIGmak_PARAMS
         )
 
 
@@ -547,7 +547,6 @@ def make_s10_maps():
         "sfcWind",
         "tas",
         "ts",
-        "tas-ts",
     ]:
         make_aggregate_monthly_plots(variable)
     try:
