@@ -110,7 +110,6 @@ def plot_array_CMIP5(ds):
     :param ds: xr.Dataset
     :return:
     """
-    # todo: Can plot_array and plot_array_CMIP5 be combined?
     # prepare plotting
     f, axs = plt.subplots(ncols=ds.identifier.size, figsize=(11, 3), **SUBPLOT_KW)
     cbar_ax = f.add_axes([0.2, 0.3, 0.6, 0.05])
@@ -541,14 +540,13 @@ def make_aggregate_monthly_plots(
 
 
 def make_s10_maps():
-    #make_individual_plots()  # wind speed change per GCM and RCM
-    #make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
-    #make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
+    make_individual_plots()  # wind speed change per GCM and RCM
+    make_aggregate_plots()  # wind speed change aggregated over GCMs/RCMs
+    make_joint_plots()  # wind speed changes for EURO-CORDEX and CMIP combined
     for variable in [
         "sfcWind",
         "tas",
         "ts",
-        "tas-ts",
     ]:
         make_aggregate_monthly_plots(variable)
     try:

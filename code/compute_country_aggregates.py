@@ -77,26 +77,49 @@ def prepare_country_geometries(onshore=True):
     return regs.loc[countries].geometry
 
 
-def make_averager_instance(onshore):
+def add_CMIP5_bounds(ds):
     """
-    Uses clean grid of EUROCORDEX domain with all the metadata to
-    instantiate spatial averaging instance
+    Adding bounds to the 1.5° x 1.75° grid to which CMIP5 data is regridded
+    :param ds:
     :return:
     """
-    eur11 = cx.cordex_domain("EUR-11", add_vertices=True)
+    from numpy import arange
+    ds["lat_b"] = arange(-90, 91, 1.5)
+    ds["lon_b"] = arange(0, 362, 1.75) - 1.75 / 2
+    return ds
+
+def make_averager_instance(onshore, experiment_family="CORDEX", ds=None):
+    """
+    Instantiates xesmf spatial averager.
+    For EURO-CORDEX, this function uses clean grid of EUROCORDEX domain with all the metadata to
+    For CMIP5, lat and lon bounds are manually added
+    :return:
+    """
     country_geometries = prepare_country_geometries(onshore)
-    savg = xe.SpatialAverager(eur11, country_geometries, geom_dim_name="country")
+    if experiment_family == "CORDEX":
+        eur11 = cx.cordex_domain("EUR-11", add_vertices=True)
+        savg = xe.SpatialAverager(eur11, country_geometries, geom_dim_name="country")
+    elif experiment_family == "CMIP5":
+        # add bounds to lat and lon to enable conservative remapping
+        ds = add_CMIP5_bounds(ds)
+        savg = xe.SpatialAverager(ds, country_geometries, geom_dim_name="country")
     return savg
 
 
 def calculate_aggregate(ds, experiment_family, onshore):
+    """
+    Aggregate datasets to country levels. Involves creating a spatial averager instance
+    that needs information about the bounds of all grid boxes.
+    :param ds:
+    :param experiment_family:
+    :param onshore:
+    :return:
+    """
     if experiment_family == "CORDEX":
         savg = make_averager_instance(onshore)
     elif experiment_family == "CMIP5":
-        savg = xe.SpatialAverager(
-            ds, prepare_country_geometries(onshore), geom_dim_name="country"
-        )
-    ds_agg = savg(ds)
+        savg = make_averager_instance(onshore, "CMIP5", ds)
+    ds_agg = savg(ds).drop(["lat_b", "lon_b"], errors="ignore")  # remove bounds added in CMIP averaging that cause issues downstream
     if onshore:
         countries = COUNTRIES
     else:

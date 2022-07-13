@@ -72,9 +72,13 @@ def get_dataset_dictionary(
     :param GCMs: list of GCMs that are being searched for. Only implemented for CMIP5
     :return:
     """
-    link_catalogue = "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster #todo generalize
+    link_catalogue = (
+        "/pool/data/Catalogs/"  # path to cordex and cmip5 catalog on mistral cluster
+    )
     if experiment_family == "CMIP5":
         catalogue = "dkrz_cmip5_disk.json"
+    elif experiment_family == "CMIP6":
+        catalogue = "dkrz_cmip6_disk.json"
     elif experiment_family == "CORDEX":
         catalogue = "dkrz_cordex_disk.json"
     cat = intake.open_esm_datastore(link_catalogue + catalogue)
@@ -92,7 +96,7 @@ def get_dataset_dictionary(
             for GCM in GCMs:
                 ensemble_member = standard_ensemble_member
                 if GCM == "EC-EARTH":
-                    ensemble_member = "r7i1p1"  # EC-Earth doesn't provide all scenarios in realization r1i1p1. Use r7i1p1 instead where all scenarios are provided.
+                    ensemble_member = "r8i1p1"  # EC-Earth doesn't provide all scenarios in realization r1i1p1. Use r8i1p1 instead where all scenarios are provided.
                 try:
                     ds_dict.update(
                         subset.search(
@@ -102,9 +106,26 @@ def get_dataset_dictionary(
                 except:
                     print(GCM + " not found")
         else:
+            subset = subset.search(ensemble_member=standard_ensemble_member)
             ds_dict = subset.to_dataset_dict(
                 cdf_kwargs={"use_cftime": True, "chunks": {}}
             )
+    elif experiment_family == "CMIP6":
+        subset = cat.search(
+            variable_id=variable_id,
+            frequency=frequency,
+            experiment_id=experiment_id,
+            member_id="r1i1p1f1",
+            table_id="Amon",
+        )
+        if experiment_id == "historical":
+            subset = subset.search(activity_id="CMIP")
+        else:
+            subset = subset.search(activity_id="ScenarioMIP")
+        subset.df.to_csv(
+            "../input/CMIP6_" + experiment_id + "_" + variable_id + ".csv"
+        )  # dump relevant parts of underlying catalogue
+        ds_dict = subset.to_dataset_dict(cdf_kwargs={"use_cftime": True, "chunks": {}})
     elif experiment_family == "CORDEX":
         subset = cat.search(
             variable_id=variable_id,
@@ -212,10 +233,14 @@ def preprocess_cmip_dataset(ds, identifier):
     ds = ds.drop(
         ["lat_bnds", "lon_bnds", "time_bnds", "bnds"], errors="ignore"
     ).assign_coords({"identifier": identifier})
-    ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
-    ds = ds.assign_attrs(
-        ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
-    )
+    try:  # CMIP5
+        ds = ds.sel(ensemble_member=ds.ensemble_member, drop=True).squeeze()
+        ds = ds.assign_attrs(
+            ensemble_information="normally r1i1p1. Exception EC-EARTH r7i1p1"
+        )
+    except:  # CMIP6
+        ds = ds.sel(member_id=ds.member_id, drop=True).squeeze()
+        ds = ds.assign_attrs(ensemble_information="r1i1p1f1")
     return ds
 
 
@@ -237,7 +262,11 @@ def aggregate_temporally(ds, experiment_id, time_aggregation):
     else:
         years = slice("2080", "2100")
     if time_aggregation == "annual":
-        ds = ds.sel(time=years).mean("time")
+        try:
+            ds = ds.sel(time=years).mean("time")
+        except:  # some datasets do not cover the correct period
+            ds = None
+            """"""
     elif time_aggregation == "monthly":
         ds = ds.sel(time=years).groupby("time.month").mean("time")
     return ds
@@ -274,25 +303,50 @@ def dictionary_to_dataset(
     list_ds = [
         aggregate_temporally(ds, experiment_id, time_aggregation) for ds in list_ds
     ]
-    if experiment_family.lower() == "cmip5":
-        # regrid all CMIP5 results to grid of first model
+    list_ds = [ds for ds in list_ds if ds]  # remove None
+    if experiment_family.lower() in ["cmip5", "cmip6"]:
+        # regrid all CMIP5 results to a fixed grid
         import xesmf as xe
+        import numpy as np
 
-        for i in range(1, len(list_ds)):
-            regridder = xe.Regridder(list_ds[i], list_ds[0], "bilinear", periodic=True)
-            list_ds[i] = regridder(list_ds[i])
+        ds_typical = xr.Dataset(
+            {
+                "lat": (["lat"], np.arange(-89.25, 90, 1.5)),
+                "lon": (["lon"], np.arange(0, 360, 1.75)),
+            }
+        )  # this resolution is representative for CMIP5 horizontal resolutions and avoids grid points at the pole
+        for i in range(0, len(list_ds)):
+            try:
+                regridder = xe.Regridder(
+                    list_ds[i],
+                    ds_typical,
+                    "bilinear",
+                    periodic=True,
+                    ignore_degenerate=True,
+                )
+                list_ds[i] = regridder(list_ds[i])
+            except:
+                list_ds[i] = None
+                if experiment_family == "CMIP6":
+                    print("One simulation can not be regridded")  # this occurs once
+                else:
+                    print("Unexpected error")
+        list_ds = [x.drop("height", errors="ignore") for x in list_ds if x]
     return xr.concat(list_ds, dim="identifier")
 
 
-def update_identifier(ds, experiment_id):
+def update_identifier(ds, experiment_id, experiment_family="CMIP5"):
     """
     Create joint identifier that is identical for historical and rcp period to be able to subtract them
     :param ds:
     :return:
     """
-    ds["identifier"] = [
-        x.replace("." + experiment_id, "") for x in ds.identifier.values
-    ]
+    if experiment_family in ["CMIP5", "CORDEX"]:
+        ds["identifier"] = [
+            x.replace("." + experiment_id, "") for x in ds.identifier.values
+        ]
+    elif experiment_family == "CMIP6":
+        ds["identifier"] = [x.split(".")[1] for x in ds.identifier.values]
 
 
 def calculate_mean(
@@ -317,10 +371,24 @@ def calculate_mean(
     )
     # manual fixes for some datasets
     # ICHEC-EC-EARTH throws a key Error for tas. Remove manually for now.
-    try:
-        del ds_dict["ICHEC.EC-EARTH.historical.Amon"]
-    except:
-        """"""
+    if variable_id == "tas":
+        for ignore_model in [
+            "ICHEC.EC-EARTH.historical.Amon",
+            "LASG-CESS.FGOALS-g2.historical.Amon",
+            "NCAR.CCSM4.rcp26.Amon",
+            "NCAR.CCSM4.rcp45.Amon",
+            "NOAA-GFDL.GFDL-CM2p1.rcp45.Amon",
+            "ICHEC.EC-EARTH.rcp45.Amon",
+        ]:
+            try:
+                del ds_dict[ignore_model]
+            except:
+                """"""
+
+    # in the large CMIP5 ensemble some tas are reported at 1.5m and some at 2m
+    if variable_id == "tas":
+        for model in list(ds_dict):
+            ds_dict[model] = ds_dict[model].drop("height", errors="ignore")
 
     ds = dictionary_to_dataset(
         ds_dict, experiment_family, experiment_id, time_aggregation
@@ -328,16 +396,36 @@ def calculate_mean(
     return ds
 
 
-def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
+def calculate_signals(
+    time_aggregation="annual", variable_id="sfcWind", full_ensemble=False
+):
+    """
+    Calculates 20y mean wind speed at the end of the historical and future periods.
+
+    :param time_aggregation: "annual" or "monthly": Whether annual means or monthly means are requested
+    :param variable_id: name of the variable, for example, "sfcWind" or "tas"
+    :param full_ensemble: if false, only use those models that were downscaled in EURO-CORDEX. If true, use full ensemble
+    :return:
+    """
     out_path = "../output/" + variable_id + "/"
     if time_aggregation == "monthly":
         out_path += "monthly/"
-    for experiment_family in ["CORDEX", "CMIP5"]:
-        if experiment_family == "CMIP5":
+    if full_ensemble:
+        experiment_families = ["CMIP5", "CMIP6"]
+        out_path += "all/"
+    else:
+        experiment_families = ["CORDEX", "CMIP5"]
+    for experiment_family in experiment_families:
+        if full_ensemble:
+            GCMs, per_RCM = None, False
+        elif (
+            experiment_family == "CMIP5"
+        ):  # only those CMIP5 models that were downscaled in EURO-CORDEX
             GCMs = get_gcm_list("all")
             per_RCM = False
         else:
-            GCMs, per_RCM = None, True
+            GCMs, per_RCM = None, True  # EURO-CORDEX
+
         ds_ref = calculate_mean(
             experiment_family,
             variable_id,
@@ -351,9 +439,14 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
         ds_ref.to_netcdf(
             out_path + experiment_family.lower() + "_mean_historical.nc"
         )  # save mean historical
-        update_identifier(ds_ref, "historical")
-        for experiment_id in ["rcp85", "rcp45", "rcp26"]:
-            if experiment_family == "CMIP5":
+        update_identifier(ds_ref, "historical", experiment_family=experiment_family)
+        if experiment_family == "CMIP6":
+            experiment_ids = ["ssp126", "ssp245", "ssp370", "ssp585"]
+        else:
+            experiment_ids = ["rcp85", "rcp45", "rcp26"]
+
+        for experiment_id in experiment_ids:
+            if experiment_family == "CMIP5" and not full_ensemble:
                 GCMs = get_gcm_list(experiment_id)
             ds_future = calculate_mean(
                 experiment_family,
@@ -368,7 +461,7 @@ def calculate_signals(time_aggregation="annual", variable_id="sfcWind"):
             ds_future.to_netcdf(
                 out_path + experiment_family.lower() + "_mean_" + experiment_id + ".nc"
             )  # save mean future
-            update_identifier(ds_future, experiment_id)
+            update_identifier(ds_future, experiment_id, experiment_family)
 
             # calculate and save difference
             diff = ds_future - ds_ref
@@ -402,7 +495,12 @@ def compute_monthly_stability_change():
                     + experiment_id
                     + ".nc"
                 )
-                ds_stability = (ds_tas["tas"] - ds_ts["ts"]).to_dataset(name="tas-ts")
+                ds_stability = (
+                    (ds_tas["tas"] - ds_ts["ts"])
+                    .drop(["identifier", "member"], errors="ignore")
+                    .to_dataset(name="tas-ts")
+                    .squeeze()
+                )
                 ds_stability.to_netcdf(
                     "../output/tas-ts/monthly/"
                     + experiment_family.lower()

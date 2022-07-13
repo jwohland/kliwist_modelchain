@@ -4,9 +4,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from plot_s10_maps import SUBPLOT_KW
+from plot_s10_maps import SUBPLOT_KW, FIG_PARAMS
 from scipy.stats import pearsonr, spearmanr
-from plot_s10_maps import FIG_PARAMS
+from compute_country_aggregates import add_CMIP5_bounds
 
 SCENARIO_DICT = {"IMAGE": "rcp26", "MINICAM": "rcp45", "MESSAGE": "rcp85"}
 EXTENT = SUBPLOT_KW["subplot_kw"]["extent"]
@@ -45,6 +45,7 @@ def load_CMIP5():
             .squeeze()
         )
         diff = diff.assign_coords({"experiment_id": experiment_id})
+        diff = add_CMIP5_bounds(diff)
         CMIP5_list.append(diff)
     ds = xr.concat(CMIP5_list, dim="experiment_id")
     ds = ds.cf.add_bounds(
@@ -93,7 +94,7 @@ def convert_to_dataframe(ds_LUH, ds_CMIP5, threshold=0.01):
     """
     # make and populate dataframe
     ds_both = xr.merge([ds_LUH, ds_CMIP5])
-    ds_both = ds_both.drop(["lat_bounds", "lon_bounds", "height"])
+    ds_both = ds_both.drop(["lat_bounds", "lon_bounds", "height", "lat_b", "lon_b"], errors="ignore")
     df = ds_both.to_dataframe()
     df = df.reset_index()
     df = df[np.abs(df.gothr+df.gsecd) > threshold]  # only consider grid cells with at least 1% change
@@ -104,6 +105,7 @@ def plot_scatter(df, experiment_family):
     # plotting
     R = pearsonr(df["gothr+gsecd"], df["sfcWind"])[0]
     rho = spearmanr(df["gothr+gsecd"], df["sfcWind"])[0]
+    plt.clf()
     g = sns.scatterplot(x="gothr+gsecd", y="sfcWind", hue="experiment_id", data=df, alpha=0.7)
     g.legend_.set_title(None)
     plt.xlabel("Change in primary plus secondary land [fraction of grid cell]")
@@ -111,19 +113,19 @@ def plot_scatter(df, experiment_family):
     plt.title(experiment_family + ", r=" + str(np.round(R,2))+ ", rho=" + str(np.round(rho,2)))
     plt.tight_layout()
     plt.savefig("../plots/LUH/pattern_correlation.png", **FIG_PARAMS)
-    plt.clf()
 
 
-# Load data
-ds_LUH = load_LUH()
-ds_CMIP5 = load_CMIP5()
+def make_plot():
+    # Load data
+    ds_LUH = load_LUH()
+    ds_CMIP5 = load_CMIP5()
 
-# crop and regrid data
-ds_LUH = select_rectangle(
-    regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative")
-)
-ds_CMIP5 = select_rectangle(ds_CMIP5)
+    # crop and regrid data
+    ds_LUH = select_rectangle(
+        regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative")
+    )
+    ds_CMIP5 = select_rectangle(ds_CMIP5)
 
 
-df = convert_to_dataframe(ds_LUH, ds_CMIP5, 0.01)
-plot_scatter(df, "CMIP5")
+    df = convert_to_dataframe(ds_LUH, ds_CMIP5, 0.01)
+    plot_scatter(df, "CMIP5")
