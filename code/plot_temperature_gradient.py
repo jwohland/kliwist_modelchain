@@ -305,7 +305,7 @@ def make_all_plots():
 
         # correlation maps
         full_ensemble_levels = [
-            np.round(x, 1) for x in np.arange(-1, 1, 0.2) if abs(x) > 0.3
+            np.round(x, 1) for x in np.arange(-1, 1.1, 0.2) if abs(x) > 0.3
         ]  # i.e. [-1, -.8 ... 1] excluding -0.2 .. 0.2
         correlation_compute_plot(
             wind_ds,
