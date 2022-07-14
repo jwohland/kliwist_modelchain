@@ -441,7 +441,7 @@ def make_joint_plots():
                     )
                 axs[0, i].set_title(experiment_id)
                 axs[1, i].set_title("")
-                add_letters(axs)
+                add_letters(axs, x=-0.03, y=1.06, fs=12)
                 plt.savefig("../plots/aggregate/windchange_mean.png", **FIG_PARAMS)
 
 
