@@ -441,6 +441,7 @@ def make_joint_plots():
                     )
                 axs[0, i].set_title(experiment_id)
                 axs[1, i].set_title("")
+                add_letters(axs)
                 plt.savefig("../plots/aggregate/windchange_mean.png", **FIG_PARAMS)
 
 
@@ -528,7 +529,6 @@ def make_aggregate_monthly_plots(
                 )
                 axs[i_month, i_col].set_title("")
             axs[0, i_col].set_title(experiment_id)
-        add_letters(axs)
 
         plt.savefig(
             "../plots/aggregate/monthly/"
