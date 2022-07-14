@@ -56,7 +56,7 @@ def make_s10_heatmaps(onshore):
         title_dic = {"CORDEX": "EURO-CORDEX", "CMIP5": "CMIP5"}
         axs[i].set(xlabel="", ylabel="", title=title_dic[experiment_family])
 
-    plt.subplots_adjust(left=0.09, right=0.98, top=0.95, wspace=0.3)
+    plt.subplots_adjust(left=0.11, right=0.98, top=0.95, wspace=0.3)
     figname = "heatmap_mean_countries"
     if not onshore:
         figname += "_offshore"
