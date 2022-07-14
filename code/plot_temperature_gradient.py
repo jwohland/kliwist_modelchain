@@ -9,6 +9,8 @@ import numpy as np
 from plot_s10_maps import add_coast_boarders, SUBPLOT_KW
 import cartopy.crs as ccrs
 from scipy.stats import linregress
+from plot_utils import *
+from plot_utils import *
 
 
 def load_winds_tempgradients(
@@ -248,14 +250,15 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
     df = pd.merge(tas_df, wind_df, on=["identifier", "experiment_id"])
 
     plt.figure()
-    sns.scatterplot(x="tas", y="sfcWind", data=df, hue="experiment_id")
-    plt.title(
-        "Correlation coefficient is " + str(np.round(df["tas"].corr(df["sfcWind"]), 2))
-    )
-    plt.ylabel(country + " offshore wind speed change [m/s]")
-    plt.xlabel("Equator minus pole temperature change [K]")
+    sns.set_theme(style="ticks", palette="dark")
+    g = sns.scatterplot(x="tas", y="sfcWind", s=50, data=df, hue="experiment_id")
+    g.legend_.set_title(None)
+    plt.title("CMIP5, r = " + str(np.round(df["tas"].corr(df["sfcWind"]), 2)))
+    plt.ylabel("Wind speed change [m/s]")
+    plt.xlabel("Equator-to-pole temperature gradient change [K]")
 
     plt.tight_layout()
+    add_letters(plt.gca(), letter_offset=3, y=1.08)
     plt.savefig(
         "../plots/tas_gradient/Scatter_plot_"
         + country
