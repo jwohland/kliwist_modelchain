@@ -12,7 +12,6 @@ def make_s10_heatmaps(onshore):
     if not onshore:
         path_to_data += "offshore/"
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
-        print(experiment_id)
         name = metric + "_" + experiment_id
         for experiment_family in ["CORDEX", "CMIP5"]:
             diff_agg = xr.open_dataset(
@@ -33,7 +32,7 @@ def make_s10_heatmaps(onshore):
             df_list.append(diff_df)
     df = pd.concat(df_list)
 
-    f, axs = plt.subplots(ncols=2, figsize=(16, 12))
+    f, axs = plt.subplots(ncols=2, figsize=(12, 9))
     cbar_ax = f.add_axes([0.2, 0.06, 0.6, 0.02])
 
     for i, experiment_family in enumerate(["CORDEX", "CMIP5"]):
@@ -54,9 +53,10 @@ def make_s10_heatmaps(onshore):
             },
             cbar_ax=cbar_ax,
         )
-        axs[i].set(xlabel="", ylabel="", title=experiment_family)
+        title_dic = {"CORDEX": "EURO-CORDEX", "CMIP5": "CMIP5"}
+        axs[i].set(xlabel="", ylabel="", title=title_dic[experiment_family])
 
-    plt.subplots_adjust(left=0.09, right=0.98, top=0.95, wspace=0.2)
+    plt.subplots_adjust(left=0.09, right=0.98, top=0.95, wspace=0.3)
     figname = "heatmap_mean_countries"
     if not onshore:
         figname += "_offshore"
