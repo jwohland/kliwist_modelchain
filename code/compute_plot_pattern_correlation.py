@@ -3,10 +3,10 @@ import xesmf as xe
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from plot_s10_maps import SUBPLOT_KW, FIG_PARAMS
 from scipy.stats import pearsonr, spearmanr
 from compute_country_aggregates import add_CMIP5_bounds
+from plot_utils import *
 
 SCENARIO_DICT = {"IMAGE": "rcp26", "MINICAM": "rcp45", "MESSAGE": "rcp85"}
 EXTENT = SUBPLOT_KW["subplot_kw"]["extent"]
@@ -81,7 +81,6 @@ def select_rectangle(ds):
     return ds
 
 
-
 def convert_to_dataframe(ds_LUH, ds_CMIP5, threshold=0.01):
     """
     Convert xarray datasets to pandas dataframes for plotting
@@ -94,24 +93,40 @@ def convert_to_dataframe(ds_LUH, ds_CMIP5, threshold=0.01):
     """
     # make and populate dataframe
     ds_both = xr.merge([ds_LUH, ds_CMIP5])
-    ds_both = ds_both.drop(["lat_bounds", "lon_bounds", "height", "lat_b", "lon_b"], errors="ignore")
+    ds_both = ds_both.drop(
+        ["lat_bounds", "lon_bounds", "height", "lat_b", "lon_b"], errors="ignore"
+    )
     df = ds_both.to_dataframe()
     df = df.reset_index()
-    df = df[np.abs(df.gothr+df.gsecd) > threshold]  # only consider grid cells with at least 1% change
+    df = df[
+        np.abs(df.gothr + df.gsecd) > threshold
+    ]  # only consider grid cells with at least 1% change
     return df
 
 
 def plot_scatter(df, experiment_family):
     # plotting
     R = pearsonr(df["gothr+gsecd"], df["sfcWind"])[0]
-    rho = spearmanr(df["gothr+gsecd"], df["sfcWind"])[0]
     plt.clf()
-    g = sns.scatterplot(x="gothr+gsecd", y="sfcWind", hue="experiment_id", data=df, alpha=0.7)
+    plt.figure(figsize=(8, 4))
+    g = sns.scatterplot(
+        x="gothr+gsecd",
+        y="sfcWind",
+        hue="experiment_id",
+        data=df,
+        palette="rocket",
+    )
+    plt.legend(fontsize=12)
     g.legend_.set_title(None)
-    plt.xlabel("Change in primary plus secondary land [fraction of grid cell]")
-    plt.ylabel("Wind speed change [m/s]")
-    plt.title(experiment_family + ", r=" + str(np.round(R,2))+ ", rho=" + str(np.round(rho,2)))
+    plt.xlabel("Change in primary plus secondary land [fraction of grid cell]", fontsize=12)
+    plt.ylabel("Wind speed change [m/s]", fontsize=12)
+    plt.title(
+        experiment_family
+        + ", r = "
+        + str(np.round(R, 2)), fontsize=12
+    )
     plt.tight_layout()
+    add_letters(plt.gca(), letter_offset=3, fs=14, y=1.06, x=-0.04)
     plt.savefig("../plots/LUH/pattern_correlation.png", **FIG_PARAMS)
 
 
@@ -125,7 +140,6 @@ def make_plot():
         regrid_LUH_onto_CMIP5(ds_LUH, ds_CMIP5, method="conservative")
     )
     ds_CMIP5 = select_rectangle(ds_CMIP5)
-
 
     df = convert_to_dataframe(ds_LUH, ds_CMIP5, 0.01)
     plot_scatter(df, "CMIP5")
