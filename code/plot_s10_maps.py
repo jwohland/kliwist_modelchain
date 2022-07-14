@@ -5,6 +5,8 @@ import xarray as xr
 from numpy import unique, linspace
 from pandas import MultiIndex
 import xesmf as xe
+from plot_utils import *
+
 
 FIG_PARAMS = {
     "dpi": 300,
@@ -526,6 +528,7 @@ def make_aggregate_monthly_plots(
                 )
                 axs[i_month, i_col].set_title("")
             axs[0, i_col].set_title(experiment_id)
+        add_letters(axs)
 
         plt.savefig(
             "../plots/aggregate/monthly/"
