@@ -1,15 +1,31 @@
-name: kliwist_modelchain
+name: kliwist_modelchain 
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - python=3.9
-  - ipykernel
-  - pandas
-  - matplotlib
+  - fsspec
+  - seaborn
   - xarray
+  - h5py
+  - geoviews
+  - ipykernel
+  - matplotlib
+  - tqdm
+  - cartopy
+  - jupyter
+  - python=3
+  - pandas
+  - ipywidgets
   - dask
   - intake-esm
   - dask-jobqueue
-  - jupyter
-  - cartopy
+  - py-cordex
+  - esgf-pyclient
+  - myproxyclient
+  - xesmf
+  - nodejs
+  - salem
+  - cdo
+  - python-cdo
+  - rasterio
+  - nbconvert
+prefix: /work/ch0636/g300106/anaconda/cmip-processing
