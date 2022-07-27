@@ -10,7 +10,6 @@ from plot_s10_maps import add_coast_boarders, SUBPLOT_KW
 import cartopy.crs as ccrs
 from scipy.stats import linregress
 from plot_utils import *
-from plot_utils import *
 
 
 def load_winds_tempgradients(
@@ -116,7 +115,7 @@ def correlation_compute_plot(
             0.6,
             0.8,
             1,
-        ]  # mask out correlation smaller than r=0.6
+        ]  # mask out correlation smaller than |r|=0.6
 
     # global correlation plot
     for scope in ["Globe", "Europe"]:
@@ -130,6 +129,8 @@ def correlation_compute_plot(
             },
         )
         add_coast_boarders(ax)
+        add_letters(ax)
+        plt.tight_layout()
         if full_ensemble:
             plt.savefig(
                 "../plots/tas_gradient/full_ensemble/Correlation_map_"
@@ -178,6 +179,8 @@ def amplitude_compute_plot(
             },
         )
         add_coast_boarders(ax)
+        add_letters(ax, letter_offset=1)
+        plt.tight_layout()
         if full_ensemble:
             plt.savefig(
                 "../plots/tas_gradient/full_ensemble/Amplitude_map_"
