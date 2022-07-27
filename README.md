@@ -31,6 +31,18 @@ Intermediate data (i.e., results from running everything under *Calculations* in
 
 **Todo: Add link to zenodo once ready**
 
+## Anaconda environment
+
+The anaconda environment can be constructed from the provided files using
+
+`conda env create --file environment.yaml`
+
+You can activate it using 
+
+`conda activate kliwist_modelchain`
+
+on a UNIX system. You might have to use `source` on other systems. 
+
 ## Figure overview
 | Figure | Filename | Creating python function |
 |---|---|---|
