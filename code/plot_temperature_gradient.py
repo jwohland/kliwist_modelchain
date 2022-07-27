@@ -89,10 +89,10 @@ def prepare_figure(scope):
     """
     if scope == "Globe":
         f, ax = plt.subplots(
-            ncols=1, figsize=((5, 3)), subplot_kw={"projection": ccrs.PlateCarree()}
+            ncols=1, figsize=((5, 4)), subplot_kw={"projection": ccrs.PlateCarree()}
         )
     else:
-        f, ax = plt.subplots(ncols=1, figsize=((5, 3)), **SUBPLOT_KW)
+        f, ax = plt.subplots(ncols=1, figsize=((5, 4)), **SUBPLOT_KW)
     return f, ax
 
 
@@ -144,6 +144,7 @@ def correlation_compute_plot(
             plt.savefig(
                 "../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300
             )
+        plt.close("all")
 
 
 def amplitude_compute_plot(
@@ -195,6 +196,7 @@ def amplitude_compute_plot(
                 "../plots/tas_gradient/Amplitude_map_" + scope + ".jpeg",
                 dpi=300,
             )
+        plt.close("all")
 
 
 def scatter_compute_plot_country(country, offshore=True, metric="diff"):
@@ -270,6 +272,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
         + ".jpeg",
         dpi=300,
     )
+    plt.close("all")
 
 
 def make_all_plots():
