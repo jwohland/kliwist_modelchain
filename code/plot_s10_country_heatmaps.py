@@ -33,7 +33,7 @@ def make_s10_heatmaps(onshore):
     df = pd.concat(df_list)
 
     f, axs = plt.subplots(ncols=2, figsize=(12, 9))
-    cbar_ax = f.add_axes([0.2, 0.06, 0.6, 0.02])
+    cbar_ax = f.add_axes([0.2, 0.05, 0.6, 0.02])
 
     for i, experiment_family in enumerate(["CORDEX", "CMIP5"]):
         df_tmp = df[df.experiment_family == experiment_family]
@@ -56,7 +56,7 @@ def make_s10_heatmaps(onshore):
         title_dic = {"CORDEX": "EURO-CORDEX", "CMIP5": "CMIP5"}
         axs[i].set(xlabel="", ylabel="", title=title_dic[experiment_family])
 
-    plt.subplots_adjust(left=0.11, right=0.98, top=0.95, wspace=0.3)
+    plt.subplots_adjust(left=0.11, right=0.98, top=0.97, wspace=0.3)
     figname = "heatmap_mean_countries"
     if not onshore:
         figname += "_offshore"
