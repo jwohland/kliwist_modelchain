@@ -143,7 +143,7 @@ def plot_aggregate(
     Plot aggregate information by evaluating all RCMs/GCMs available for a specific GCM/RCM in terms of
     - mean change
     - standard deviation of mean change accross the ensemble
-    - mean change divided by standard deviation as indicator of signal to noise ratio  # todo think about 1/N scaling or so
+    - mean change divided by standard deviation as indicator of signal to noise ratio
     :param ds:
     :param model:
     :param metric:
@@ -152,7 +152,6 @@ def plot_aggregate(
     :param aggregate_dimension:
     :return:
     """
-    # todo there must be a nicer way of doing this with fewer if and elifs
     if aggregate_dimension == "RCM":
         N_models = (
             len(ds.GCMs)
