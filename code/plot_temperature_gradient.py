@@ -124,7 +124,7 @@ def correlation_compute_plot(
             levels=levels,
             ax=ax,
             cbar_kwargs={
-                "label": "Correlation temperature gradient change and wind speed change",
+                "label": "Correlation temperature gradient change \n and wind speed change",
                 "orientation": "horizontal",
             },
         )
