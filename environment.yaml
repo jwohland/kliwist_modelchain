@@ -28,4 +28,3 @@ dependencies:
   - python-cdo
   - rasterio
   - nbconvert
-prefix: /work/ch0636/g300106/anaconda/cmip-processing
