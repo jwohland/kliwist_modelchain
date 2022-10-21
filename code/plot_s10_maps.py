@@ -70,7 +70,9 @@ def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
     :return:
     """
     # prepare plotting
-    RCMs, GCMs = list_of_models(ds, "RCM", historical), list_of_models(ds, "GCM", historical)
+    RCMs, GCMs = list_of_models(ds, "RCM", historical), list_of_models(
+        ds, "GCM", historical
+    )
     f, axs = plt.subplots(
         ncols=len(GCMs),
         nrows=len(RCMs),
@@ -80,11 +82,13 @@ def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
     plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
     cbar_ax = f.add_axes([0.2, 0.06, 0.6, 0.01])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
+    if historical:
+        label = "Mean wind speed 1985-2000 [m/s]"
 
     for i_ident, ident in enumerate(sorted(ds.identifier.values)):
         GCM, RCM = ident.split(".")[1], ident.split(".")[-2]
         if historical:
-            RCM = ident.split(".")[-3] # historical uses slightly different convention
+            RCM = ident.split(".")[-3]  # historical uses slightly different convention
         if (
             ident == "EUR-11.CNRM-CERFACS-CNRM-CM5.ICTP.ICTP-RegCM4-6.mon"
             and ds["sfcWind"].sel(identifier=ident).isnull().all()
@@ -119,7 +123,7 @@ def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
         )
 
 
-def plot_array_CMIP5(ds, plot_params=DIFF_PLOT_PARAMS):
+def plot_array_CMIP5(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
     """
     Plot array of CMIP5 change signals per model (in different columns) as provided in ds
     :param ds: xr.Dataset
@@ -129,7 +133,18 @@ def plot_array_CMIP5(ds, plot_params=DIFF_PLOT_PARAMS):
     f, axs = plt.subplots(ncols=ds.identifier.size, figsize=(11, 3), **SUBPLOT_KW)
     cbar_ax = f.add_axes([0.2, 0.3, 0.6, 0.05])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
-
+    plot_params = {
+        "levels": linspace(-0.7, 0.7, 8),
+        "extend": "both",
+        "cmap": plt.get_cmap("RdBu_r"),
+    }
+    if historical:
+        "Mean wind speed 1985-2005 [m/s]"
+        plot_params = {
+            "levels": linspace(2, 10, 9),
+            "extend": "both",
+            "cmap": plt.get_cmap("Greens"),
+        }
     for i, ident in enumerate(sorted(ds.identifier.values)):
         GCM = ident.split(".")[1]
         # plot values
