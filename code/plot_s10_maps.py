@@ -46,8 +46,10 @@ def add_coast_boarders(ax):
     ax.add_feature(cf.BORDERS)
 
 
-def list_of_models(ds, model_type):
+def list_of_models(ds, model_type, historical=False):
     index = -2
+    if historical:
+        index = -3
     if model_type == "GCM":
         index = 1
     return sorted(list(unique([x.split(".")[index] for x in ds.identifier.values])))
@@ -61,14 +63,14 @@ def reindex_per_model(ds):
     return tmp.assign(identifier=new_index).unstack("identifier")
 
 
-def plot_array(ds, plot_params=DIFF_PLOT_PARAMS):
+def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
     """
     Plot array of change signals in Eurocordex ensemble where each column represents one GCM and each row is one RCM.
     :param ds: xr.Dataset
     :return:
     """
     # prepare plotting
-    RCMs, GCMs = list_of_models(ds, "RCM"), list_of_models(ds, "GCM")
+    RCMs, GCMs = list_of_models(ds, "RCM", historical), list_of_models(ds, "GCM", historical)
     f, axs = plt.subplots(
         ncols=len(GCMs),
         nrows=len(RCMs),
@@ -248,9 +250,9 @@ def make_individual_plots():
             "../output/sfcWind/" + experiment_family + "_mean_historical.nc"
         )
         if experiment_family == "cordex":
-            plot_array(ref, plot_params=MEAN_PLOT_PARAMS)
+            plot_array(ref, plot_params=MEAN_PLOT_PARAMS, historical=True)
         else:
-            plot_array_CMIP5(diff, plot_params=MEAN_PLOT_PARAMS)
+            plot_array_CMIP5(diff, plot_params=MEAN_PLOT_PARAMS, historical=True)
         plt.savefig(
             "../plots/" + experiment_family + "_wind_historical.png", **FIG_PARAMS
         )
