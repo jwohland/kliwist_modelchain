@@ -269,7 +269,7 @@ def make_individual_plots():
         if experiment_family == "cordex":
             plot_array(ref, plot_params=MEAN_PLOT_PARAMS, historical=True)
         else:
-            plot_array_CMIP5(diff, plot_params=MEAN_PLOT_PARAMS)
+            plot_array_CMIP5(diff, plot_params=MEAN_PLOT_PARAMS, historical=True)
         plt.savefig(
             "../plots/" + experiment_family + "_wind_historical.png", **FIG_PARAMS
         )
