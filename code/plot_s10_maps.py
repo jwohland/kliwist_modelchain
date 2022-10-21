@@ -462,9 +462,9 @@ def make_joint_plots():
                         transform=axs[j, 0].transAxes,
                         **TEXT_PARAMS
                     )
+                add_letters(axs, x=-0.03, y=1.06, fs=12)
                 axs[0, i].set_title(experiment_id)
                 axs[1, i].set_title("")
-                add_letters(axs, x=-0.03, y=1.06, fs=12)
                 # add significance hatching, masking areas that are not significant at the 95% level
                 p_cmip5.plot.contourf(
                     ax=axs[0, i],
