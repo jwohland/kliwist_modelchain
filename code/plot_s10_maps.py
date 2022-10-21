@@ -24,12 +24,20 @@ TEXT_PARAMS = {
     "verticalalignment": "center",
 }
 
-MEAN_PLOT_PARAMS = {
+DIFF_PLOT_PARAMS = {
     "x": "lon",
     "y": "lat",
     "levels": linspace(-0.7, 0.7, 8),
     "extend": "both",
     "cmap": plt.get_cmap("RdBu_r"),
+}
+
+MEAN_PLOT_PARAMS = {
+    "x": "lon",
+    "y": "lat",
+    "levels": linspace(2, 10, 9),
+    "extend": "both",
+    "cmap": plt.get_cmap("Greens"),
 }
 
 
@@ -53,7 +61,7 @@ def reindex_per_model(ds):
     return tmp.assign(identifier=new_index).unstack("identifier")
 
 
-def plot_array(ds):
+def plot_array(ds, plot_params=DIFF_PLOT_PARAMS):
     """
     Plot array of change signals in Eurocordex ensemble where each column represents one GCM and each row is one RCM.
     :param ds: xr.Dataset
@@ -85,11 +93,11 @@ def plot_array(ds):
                     ax=ax,
                     cbar_ax=cbar_ax,
                     cbar_kwargs={"label": label, "orientation": "horizontal"},
-                    **MEAN_PLOT_PARAMS
+                    **plot_params
                 )
             else:
                 ds["sfcWind"].sel(identifier=ident).plot(
-                    ax=ax, add_colorbar=False, **MEAN_PLOT_PARAMS
+                    ax=ax, add_colorbar=False, **plot_params
                 )
             add_coast_boarders(ax)
             ax.set_title("")
@@ -107,7 +115,7 @@ def plot_array(ds):
         )
 
 
-def plot_array_CMIP5(ds):
+def plot_array_CMIP5(ds, plot_params=DIFF_PLOT_PARAMS):
     """
     Plot array of CMIP5 change signals per model (in different columns) as provided in ds
     :param ds: xr.Dataset
@@ -126,11 +134,11 @@ def plot_array_CMIP5(ds):
                 ax=axs.flatten()[i],
                 cbar_ax=cbar_ax,
                 cbar_kwargs={"label": label, "orientation": "horizontal"},
-                **MEAN_PLOT_PARAMS
+                **plot_params
             )
         else:
             ds["sfcWind"].sel(identifier=ident).plot(
-                ax=axs.flatten()[i], add_colorbar=False, **MEAN_PLOT_PARAMS
+                ax=axs.flatten()[i], add_colorbar=False, **plot_params
             )
         axs.flatten()[i].set_title(GCM, fontsize=6)
         add_coast_boarders(axs.flatten()[i])
@@ -221,7 +229,7 @@ def plot_aggregate(
 
 
 def make_individual_plots():
-    ### Individual plots of all models ###
+    ### Individual plots of all models future - historical ###
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         # CORDEX
         diff = xr.open_dataset("../output/sfcWind/cordex_diff_" + experiment_id + ".nc")
@@ -233,10 +241,19 @@ def make_individual_plots():
         diff = xr.open_dataset("../output/sfcWind/cmip5_diff_" + experiment_id + ".nc")
         plot_array_CMIP5(diff)
         plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
-        # todo add historical values. Should be as easy as:
-        # ref = xr.open_dataset("../output/sfcWind/cordex_hist_" + experiment_id + ".nc")
-        # plot_array(ref)
-        # plt.savefig("../plots/cmip5_wind_" + experiment_id + ".png", **FIG_PARAMS)
+
+    # individual plots in the historical period
+    for experiment_family in ["cordex", "cmip5"]:
+        ref = xr.open_dataset(
+            "../output/sfcWind/" + experiment_family + "_mean_historical.nc"
+        )
+        if experiment_family == "cordex":
+            plot_array(ref, plot_params=MEAN_PLOT_PARAMS)
+        else:
+            plot_array_CMIP5(diff, plot_params=MEAN_PLOT_PARAMS)
+        plt.savefig(
+            "../plots/" + experiment_family + "_wind_historical.png", **FIG_PARAMS
+        )
 
 
 def make_aggregate_plots():
