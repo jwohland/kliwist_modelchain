@@ -365,6 +365,21 @@ def make_aggregate_plots():
             )
 
 
+def xarray_ttest(ds):
+    """
+    Compute two sided T test for data in ds using the null hypothesis that the population mean is zero.
+    :param ds: Xarray dataset containing changes in wind speeds with dimensions (r)lat, (r)lon, identifier
+    :return:
+    """
+    p = ttest_1samp(ds["sfcWind"].values, popmean=0).pvalue
+    da_p = xr.DataArray(
+        p.transpose(),
+        coords=ds.mean(dim="identifier").coords,
+        dims=ds.mean(dim="identifier").dims,
+    )
+    return da_p
+
+
 def make_joint_plots():
     """
     creates plots of the CORDEX and CMIP5 mean changes in all three scenarios and a plot showing the difference in changes
@@ -379,22 +394,17 @@ def make_joint_plots():
             f, axs = plt.subplots(ncols=3, nrows=2, figsize=(10, 5), **SUBPLOT_KW)
             cbar_ax = f.add_axes([0.15, 0.1, 0.7, 0.05])
         for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
-            # open data  # todo include significance testing here. Requires loading not only the difference but also the absolute values
+            # open data
             ds_cordex = xr.open_dataset(
                 "../output/sfcWind/cordex_diff_" + experiment_id + ".nc"
             ).squeeze()
             diff_cordex = ds_cordex.mean(dim="identifier")
-            p_cordex = ttest_1samp(
-                ds_cordex["sfcWind"].values, popmean=0
-            )  # two sided T-test with null hypothesis that population mean is zero (no change)
+            p_cordex = xarray_ttest(ds_cordex)
             ds_cmip5 = xr.open_dataset(
                 "../output/sfcWind/cmip5_diff_" + experiment_id + ".nc"
             ).squeeze()
             diff_cmip5 = ds_cmip5.mean(dim="identifier")
-            p_cmip5 = ttest_1samp(
-                ds_cmip5["sfcWind"].values, popmean=0
-            )  # two sided T-test with null hypothesis that population mean is zero (no change)
-
+            p_cmip5 = xarray_ttest(ds_cmip5)
             if cordex_vs_CMIP5_changes:
                 # regrid CORDEX to CMIP5 grid
                 regridder = xe.Regridder(
