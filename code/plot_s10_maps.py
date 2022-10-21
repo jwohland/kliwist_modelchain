@@ -83,6 +83,8 @@ def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
 
     for i_ident, ident in enumerate(sorted(ds.identifier.values)):
         GCM, RCM = ident.split(".")[1], ident.split(".")[-2]
+        if historical:
+            RCM = ident.split(".")[-3] # historical uses slightly different convention
         if (
             ident == "EUR-11.CNRM-CERFACS-CNRM-CM5.ICTP.ICTP-RegCM4-6.mon"
             and ds["sfcWind"].sel(identifier=ident).isnull().all()
