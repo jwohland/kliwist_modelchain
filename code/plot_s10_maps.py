@@ -139,7 +139,7 @@ def plot_array_CMIP5(ds, historical=False):
         "cmap": plt.get_cmap("RdBu_r"),
     }
     if historical:
-        "Mean wind speed 1985-2005 [m/s]"
+        label = "Mean wind speed 1985-2005 [m/s]"
         plot_params = {
             "levels": linspace(2, 10, 9),
             "extend": "both",
