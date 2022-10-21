@@ -123,7 +123,7 @@ def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
         )
 
 
-def plot_array_CMIP5(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
+def plot_array_CMIP5(ds, historical=False):
     """
     Plot array of CMIP5 change signals per model (in different columns) as provided in ds
     :param ds: xr.Dataset
@@ -269,7 +269,7 @@ def make_individual_plots():
         if experiment_family == "cordex":
             plot_array(ref, plot_params=MEAN_PLOT_PARAMS, historical=True)
         else:
-            plot_array_CMIP5(diff, plot_params=MEAN_PLOT_PARAMS, historical=True)
+            plot_array_CMIP5(ref, historical=True)
         plt.savefig(
             "../plots/" + experiment_family + "_wind_historical.png", **FIG_PARAMS
         )
