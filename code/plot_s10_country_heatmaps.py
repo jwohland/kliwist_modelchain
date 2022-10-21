@@ -3,7 +3,7 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 from numpy import linspace
-
+from plot_s10_maps import xarray_ttest
 
 def make_s10_heatmaps(onshore):
     metric = "diff"
@@ -22,6 +22,7 @@ def make_s10_heatmaps(onshore):
                 + name
                 + ".nc"
             )
+            p_value = xarray_ttest(diff_agg)
             diff_df = (
                 diff_agg.mean(dim="identifier")
                 .drop(["height", "lat", "lon", "member"], errors="ignore")
@@ -29,6 +30,7 @@ def make_s10_heatmaps(onshore):
             )  # errors=ignore means that no error is raised if subset of height, lat, lon does not exist
             diff_df["experiment_family"] = experiment_family
             diff_df["experiment_id"] = experiment_id
+            diff_df["p_value"] = p_value
             df_list.append(diff_df)
     df = pd.concat(df_list)
 
@@ -37,15 +39,37 @@ def make_s10_heatmaps(onshore):
 
     for i, experiment_family in enumerate(["CORDEX", "CMIP5"]):
         df_tmp = df[df.experiment_family == experiment_family]
-        df_tmp = df_tmp.pivot(columns="experiment_id", values="sfcWind")
+        df_wind = df_tmp.pivot(columns="experiment_id", values="sfcWind")
+        df_p = df_tmp.pivot(columns="experiment_id", values="p_value")
+
+        # plot significant changes in bold
         sns.heatmap(
-            df_tmp,
+            df_wind,
+            ax=axs[i],
+            annot=True,
+            fmt=".2f",
+            annot_kws={"weight": "bold"},
+            cmap=plt.get_cmap("RdBu_r", 5),
+            vmin=-.3, 
+            vmax=.3,
+            mask=df_p>0.05,  # mask countries where N0 not rejected
+            cbar_kws={
+                "orientation": "horizontal",
+                "label": "Ensemble mean wind speed change [m/s]",
+                "ticks": linspace(-.3, .3, 6),
+            },
+            cbar_ax=cbar_ax,
+        )
+        # add non-significant changes in normal font
+        sns.heatmap(
+            data=df_wind,
             ax=axs[i],
             annot=True,
             fmt=".2f",
             cmap=plt.get_cmap("RdBu_r", 5),
-            vmin=-.3, 
+            vmin=-.3,
             vmax=.3,
+            mask=df_p<0.05,  # mask countries where N0 rejected
             cbar_kws={
                 "orientation": "horizontal",
                 "label": "Ensemble mean wind speed change [m/s]",
