@@ -6,6 +6,7 @@ from numpy import unique, linspace
 from pandas import MultiIndex
 import xesmf as xe
 from plot_utils import *
+from scipy.stats import ttest_1samp
 
 
 FIG_PARAMS = {
@@ -232,6 +233,10 @@ def make_individual_plots():
         diff = xr.open_dataset("../output/sfcWind/cmip5_diff_" + experiment_id + ".nc")
         plot_array_CMIP5(diff)
         plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
+        # todo add historical values. Should be as easy as:
+        # ref = xr.open_dataset("../output/sfcWind/cordex_hist_" + experiment_id + ".nc")
+        # plot_array(ref)
+        # plt.savefig("../plots/cmip5_wind_" + experiment_id + ".png", **FIG_PARAMS)
 
 
 def make_aggregate_plots():
@@ -374,13 +379,22 @@ def make_joint_plots():
             f, axs = plt.subplots(ncols=3, nrows=2, figsize=(10, 5), **SUBPLOT_KW)
             cbar_ax = f.add_axes([0.15, 0.1, 0.7, 0.05])
         for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
-            # open data
-            diff_cordex = xr.open_dataset(
+            # open data  # todo include significance testing here. Requires loading not only the difference but also the absolute values
+            ds_cordex = xr.open_dataset(
                 "../output/sfcWind/cordex_diff_" + experiment_id + ".nc"
-            ).mean(dim="identifier")
-            diff_cmip5 = xr.open_dataset(
+            ).squeeze()
+            diff_cordex = ds_cordex.mean(dim="identifier")
+            p_cordex = ttest_1samp(
+                ds_cordex["sfcWind"].values, popmean=0
+            )  # two sided T-test with null hypothesis that population mean is zero (no change)
+            ds_cmip5 = xr.open_dataset(
                 "../output/sfcWind/cmip5_diff_" + experiment_id + ".nc"
-            ).mean(dim="identifier")
+            ).squeeze()
+            diff_cmip5 = ds_cmip5.mean(dim="identifier")
+            p_cmip5 = ttest_1samp(
+                ds_cmip5["sfcWind"].values, popmean=0
+            )  # two sided T-test with null hypothesis that population mean is zero (no change)
+
             if cordex_vs_CMIP5_changes:
                 # regrid CORDEX to CMIP5 grid
                 regridder = xe.Regridder(
@@ -441,6 +455,23 @@ def make_joint_plots():
                 axs[0, i].set_title(experiment_id)
                 axs[1, i].set_title("")
                 add_letters(axs, x=-0.03, y=1.06, fs=12)
+                # add significance hatching, masking areas that are not significant at the 95% level
+                p_cmip5.plot.contourf(
+                    ax=axs[0, i],
+                    levels=[0, 0.05],
+                    hatches=["..", ""],
+                    alpha=0,
+                    **plot_params,
+                    add_colorbar=False
+                )
+                p_cordex.plot.contourf(
+                    ax=axs[1, i],
+                    levels=[0, 0.05],
+                    hatches=["..", ""],
+                    alpha=0,
+                    **plot_params,
+                    add_colorbar=False
+                )
                 plt.savefig("../plots/aggregate/windchange_mean.png", **FIG_PARAMS)
 
 
