@@ -9,6 +9,7 @@ import numpy as np
 from plot_s10_maps import add_coast_boarders, SUBPLOT_KW
 import cartopy.crs as ccrs
 from scipy.stats import linregress
+from plot_utils import *
 
 
 def load_winds_tempgradients(
@@ -88,10 +89,10 @@ def prepare_figure(scope):
     """
     if scope == "Globe":
         f, ax = plt.subplots(
-            ncols=1, figsize=((5, 3)), subplot_kw={"projection": ccrs.PlateCarree()}
+            ncols=1, figsize=((5, 4)), subplot_kw={"projection": ccrs.PlateCarree()}
         )
     else:
-        f, ax = plt.subplots(ncols=1, figsize=((5, 3)), **SUBPLOT_KW)
+        f, ax = plt.subplots(ncols=1, figsize=((5, 4)), **SUBPLOT_KW)
     return f, ax
 
 
@@ -114,7 +115,7 @@ def correlation_compute_plot(
             0.6,
             0.8,
             1,
-        ]  # mask out correlation smaller than r=0.6
+        ]  # mask out correlation smaller than |r|=0.6
 
     # global correlation plot
     for scope in ["Globe", "Europe"]:
@@ -123,11 +124,13 @@ def correlation_compute_plot(
             levels=levels,
             ax=ax,
             cbar_kwargs={
-                "label": "Correlation temperature gradient change and wind speed change",
+                "label": "Correlation temperature gradient change \n and wind speed change",
                 "orientation": "horizontal",
             },
         )
         add_coast_boarders(ax)
+        add_letters(ax)
+        plt.tight_layout()
         if full_ensemble:
             plt.savefig(
                 "../plots/tas_gradient/full_ensemble/Correlation_map_"
@@ -141,6 +144,7 @@ def correlation_compute_plot(
             plt.savefig(
                 "../plots/tas_gradient/Correlation_map_" + scope + ".jpeg", dpi=300
             )
+        plt.close("all")
 
 
 def amplitude_compute_plot(
@@ -176,6 +180,8 @@ def amplitude_compute_plot(
             },
         )
         add_coast_boarders(ax)
+        add_letters(ax, letter_offset=1)
+        plt.tight_layout()
         if full_ensemble:
             plt.savefig(
                 "../plots/tas_gradient/full_ensemble/Amplitude_map_"
@@ -190,6 +196,7 @@ def amplitude_compute_plot(
                 "../plots/tas_gradient/Amplitude_map_" + scope + ".jpeg",
                 dpi=300,
             )
+        plt.close("all")
 
 
 def scatter_compute_plot_country(country, offshore=True, metric="diff"):
@@ -248,14 +255,15 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
     df = pd.merge(tas_df, wind_df, on=["identifier", "experiment_id"])
 
     plt.figure()
-    sns.scatterplot(x="tas", y="sfcWind", data=df, hue="experiment_id")
-    plt.title(
-        "Correlation coefficient is " + str(np.round(df["tas"].corr(df["sfcWind"]), 2))
-    )
-    plt.ylabel(country + " offshore wind speed change [m/s]")
-    plt.xlabel("Equator minus pole temperature change [K]")
+    sns.set_theme(style="ticks", palette="dark")
+    g = sns.scatterplot(x="tas", y="sfcWind", s=50, data=df, hue="experiment_id")
+    g.legend_.set_title(None)
+    plt.title("CMIP5, r = " + str(np.round(df["tas"].corr(df["sfcWind"]), 2)))
+    plt.ylabel("Wind speed change [m/s]")
+    plt.xlabel("Equator-to-pole temperature gradient change [K]")
 
     plt.tight_layout()
+    add_letters(plt.gca(), letter_offset=3, y=1.08)
     plt.savefig(
         "../plots/tas_gradient/Scatter_plot_"
         + country
@@ -264,6 +272,7 @@ def scatter_compute_plot_country(country, offshore=True, metric="diff"):
         + ".jpeg",
         dpi=300,
     )
+    plt.close("all")
 
 
 def make_all_plots():

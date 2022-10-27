@@ -5,6 +5,9 @@ import xarray as xr
 from numpy import unique, linspace
 from pandas import MultiIndex
 import xesmf as xe
+from plot_utils import *
+from scipy.stats import ttest_1samp
+
 
 FIG_PARAMS = {
     "dpi": 300,
@@ -21,12 +24,20 @@ TEXT_PARAMS = {
     "verticalalignment": "center",
 }
 
-MEAN_PLOT_PARAMS = {
+DIFF_PLOT_PARAMS = {
     "x": "lon",
     "y": "lat",
     "levels": linspace(-0.7, 0.7, 8),
     "extend": "both",
     "cmap": plt.get_cmap("RdBu_r"),
+}
+
+MEAN_PLOT_PARAMS = {
+    "x": "lon",
+    "y": "lat",
+    "levels": linspace(2, 10, 9),
+    "extend": "both",
+    "cmap": plt.get_cmap("Greens"),
 }
 
 
@@ -35,8 +46,10 @@ def add_coast_boarders(ax):
     ax.add_feature(cf.BORDERS)
 
 
-def list_of_models(ds, model_type):
+def list_of_models(ds, model_type, historical=False):
     index = -2
+    if historical:
+        index = -3
     if model_type == "GCM":
         index = 1
     return sorted(list(unique([x.split(".")[index] for x in ds.identifier.values])))
@@ -50,14 +63,16 @@ def reindex_per_model(ds):
     return tmp.assign(identifier=new_index).unstack("identifier")
 
 
-def plot_array(ds):
+def plot_array(ds, plot_params=DIFF_PLOT_PARAMS, historical=False):
     """
     Plot array of change signals in Eurocordex ensemble where each column represents one GCM and each row is one RCM.
     :param ds: xr.Dataset
     :return:
     """
     # prepare plotting
-    RCMs, GCMs = list_of_models(ds, "RCM"), list_of_models(ds, "GCM")
+    RCMs, GCMs = list_of_models(ds, "RCM", historical), list_of_models(
+        ds, "GCM", historical
+    )
     f, axs = plt.subplots(
         ncols=len(GCMs),
         nrows=len(RCMs),
@@ -67,9 +82,13 @@ def plot_array(ds):
     plt.subplots_adjust(0.04, 0.1, 0.95, 0.97, hspace=0.05, wspace=0.05)
     cbar_ax = f.add_axes([0.2, 0.06, 0.6, 0.01])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
+    if historical:
+        label = "Mean wind speed 1985-2000 [m/s]"
 
     for i_ident, ident in enumerate(sorted(ds.identifier.values)):
         GCM, RCM = ident.split(".")[1], ident.split(".")[-2]
+        if historical:
+            RCM = ident.split(".")[-3]  # historical uses slightly different convention
         if (
             ident == "EUR-11.CNRM-CERFACS-CNRM-CM5.ICTP.ICTP-RegCM4-6.mon"
             and ds["sfcWind"].sel(identifier=ident).isnull().all()
@@ -82,11 +101,11 @@ def plot_array(ds):
                     ax=ax,
                     cbar_ax=cbar_ax,
                     cbar_kwargs={"label": label, "orientation": "horizontal"},
-                    **MEAN_PLOT_PARAMS
+                    **plot_params
                 )
             else:
                 ds["sfcWind"].sel(identifier=ident).plot(
-                    ax=ax, add_colorbar=False, **MEAN_PLOT_PARAMS
+                    ax=ax, add_colorbar=False, **plot_params
                 )
             add_coast_boarders(ax)
             ax.set_title("")
@@ -104,7 +123,7 @@ def plot_array(ds):
         )
 
 
-def plot_array_CMIP5(ds):
+def plot_array_CMIP5(ds, historical=False):
     """
     Plot array of CMIP5 change signals per model (in different columns) as provided in ds
     :param ds: xr.Dataset
@@ -114,7 +133,18 @@ def plot_array_CMIP5(ds):
     f, axs = plt.subplots(ncols=ds.identifier.size, figsize=(11, 3), **SUBPLOT_KW)
     cbar_ax = f.add_axes([0.2, 0.3, 0.6, 0.05])
     label = "Wind speed change 2080-2100 minus 1985-2005 [m/s]"
-
+    plot_params = {
+        "levels": linspace(-0.7, 0.7, 8),
+        "extend": "both",
+        "cmap": plt.get_cmap("RdBu_r"),
+    }
+    if historical:
+        label = "Mean wind speed 1985-2005 [m/s]"
+        plot_params = {
+            "levels": linspace(2, 10, 9),
+            "extend": "both",
+            "cmap": plt.get_cmap("Greens"),
+        }
     for i, ident in enumerate(sorted(ds.identifier.values)):
         GCM = ident.split(".")[1]
         # plot values
@@ -123,11 +153,11 @@ def plot_array_CMIP5(ds):
                 ax=axs.flatten()[i],
                 cbar_ax=cbar_ax,
                 cbar_kwargs={"label": label, "orientation": "horizontal"},
-                **MEAN_PLOT_PARAMS
+                **plot_params
             )
         else:
             ds["sfcWind"].sel(identifier=ident).plot(
-                ax=axs.flatten()[i], add_colorbar=False, **MEAN_PLOT_PARAMS
+                ax=axs.flatten()[i], add_colorbar=False, **plot_params
             )
         axs.flatten()[i].set_title(GCM, fontsize=6)
         add_coast_boarders(axs.flatten()[i])
@@ -141,7 +171,7 @@ def plot_aggregate(
     Plot aggregate information by evaluating all RCMs/GCMs available for a specific GCM/RCM in terms of
     - mean change
     - standard deviation of mean change accross the ensemble
-    - mean change divided by standard deviation as indicator of signal to noise ratio  # todo think about 1/N scaling or so
+    - mean change divided by standard deviation as indicator of signal to noise ratio
     :param ds:
     :param model:
     :param metric:
@@ -150,7 +180,6 @@ def plot_aggregate(
     :param aggregate_dimension:
     :return:
     """
-    # todo there must be a nicer way of doing this with fewer if and elifs
     if aggregate_dimension == "RCM":
         N_models = (
             len(ds.GCMs)
@@ -219,7 +248,7 @@ def plot_aggregate(
 
 
 def make_individual_plots():
-    ### Individual plots of all models ###
+    ### Individual plots of all models future - historical ###
     for experiment_id in ["rcp26", "rcp45", "rcp85"]:
         # CORDEX
         diff = xr.open_dataset("../output/sfcWind/cordex_diff_" + experiment_id + ".nc")
@@ -231,6 +260,19 @@ def make_individual_plots():
         diff = xr.open_dataset("../output/sfcWind/cmip5_diff_" + experiment_id + ".nc")
         plot_array_CMIP5(diff)
         plt.savefig("../plots/cmip5_windchange_" + experiment_id + ".png", **FIG_PARAMS)
+
+    # individual plots in the historical period
+    for experiment_family in ["cordex", "cmip5"]:
+        ref = xr.open_dataset(
+            "../output/sfcWind/" + experiment_family + "_mean_historical.nc"
+        )
+        if experiment_family == "cordex":
+            plot_array(ref, plot_params=MEAN_PLOT_PARAMS, historical=True)
+        else:
+            plot_array_CMIP5(ref, historical=True)
+        plt.savefig(
+            "../plots/" + experiment_family + "_wind_historical.png", **FIG_PARAMS
+        )
 
 
 def make_aggregate_plots():
@@ -359,6 +401,21 @@ def make_aggregate_plots():
             )
 
 
+def xarray_ttest(ds):
+    """
+    Compute two sided T test for data in ds using the null hypothesis that the population mean is zero.
+    :param ds: Xarray dataset containing changes in wind speeds with dimensions (r)lat, (r)lon, identifier
+    :return:
+    """
+    p = ttest_1samp(ds["sfcWind"].values, popmean=0).pvalue
+    da_p = xr.DataArray(
+        p.transpose(),
+        coords=ds.mean(dim="identifier").coords,
+        dims=ds.mean(dim="identifier").dims,
+    )
+    return da_p
+
+
 def make_joint_plots():
     """
     creates plots of the CORDEX and CMIP5 mean changes in all three scenarios and a plot showing the difference in changes
@@ -374,12 +431,16 @@ def make_joint_plots():
             cbar_ax = f.add_axes([0.15, 0.1, 0.7, 0.05])
         for i, experiment_id in enumerate(["rcp26", "rcp45", "rcp85"]):
             # open data
-            diff_cordex = xr.open_dataset(
+            ds_cordex = xr.open_dataset(
                 "../output/sfcWind/cordex_diff_" + experiment_id + ".nc"
-            ).mean(dim="identifier")
-            diff_cmip5 = xr.open_dataset(
+            ).squeeze()
+            diff_cordex = ds_cordex.mean(dim="identifier")
+            p_cordex = xarray_ttest(ds_cordex)
+            ds_cmip5 = xr.open_dataset(
                 "../output/sfcWind/cmip5_diff_" + experiment_id + ".nc"
-            ).mean(dim="identifier")
+            ).squeeze()
+            diff_cmip5 = ds_cmip5.mean(dim="identifier")
+            p_cmip5 = xarray_ttest(ds_cmip5)
             if cordex_vs_CMIP5_changes:
                 # regrid CORDEX to CMIP5 grid
                 regridder = xe.Regridder(
@@ -437,6 +498,24 @@ def make_joint_plots():
                         transform=axs[j, 0].transAxes,
                         **TEXT_PARAMS
                     )
+                # add significance hatching, masking areas that are not significant at the 95% level
+                p_cmip5.plot.contourf(
+                    ax=axs[0, i],
+                    levels=[0, 0.05],
+                    hatches=["..", ""],
+                    alpha=0,
+                    **plot_params,
+                    add_colorbar=False
+                )
+                p_cordex.plot.contourf(
+                    ax=axs[1, i],
+                    levels=[0, 0.05],
+                    hatches=["..", ""],
+                    alpha=0,
+                    **plot_params,
+                    add_colorbar=False
+                )
+                add_letters(axs, x=-0.03, y=1.06, fs=12)
                 axs[0, i].set_title(experiment_id)
                 axs[1, i].set_title("")
                 plt.savefig("../plots/aggregate/windchange_mean.png", **FIG_PARAMS)

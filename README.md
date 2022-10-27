@@ -1,33 +1,60 @@
 # kliwist_modelchain
-Evaluating the GCM-RCM modeling chain for wind energy applications.
+
+Code underlying analysis performed in 
+
+Wohland, J., 2021, Process-based climate change impact assessment for European winds using EURO-CORDEX and global models
+
+If you use content of this repository or code derived from it in academic work, please cite the above publication. 
+
+The intention of this repository is to document the analysis in an attempt to make scientific work more transparent and reproducible. 
 
 
+## Access to input data 
 
-##  Data access
+### Climate model data
 
 Most data is accessed using the `intake` package in the DKRZ ecosystem. Catalogue data is made available in the `output` folder to enable reproducibility at other institutions as well. 
 
-### REMO LUCAS
+### Land use change data
 
-Idealized REMO experiments from the LUCAS project (assuming all of Europe is covered in forest, grass or current land use) are retrieved from the DKRZ tape archive. 
-Retrieval and preprocessing is performed by running:
-
-`bash data/dwn_LUCAS_WIND_eval.sh`
-
-`bash data/dwn_LUCAS_WIND_forest.sh`
-
-`bash data/dwn_LUCAS_WIND_grass.sh`
-
-### NorESM1-M
-
-is not available at DKRZ. 
-The model didn't make wind speeds (`sfcWind`) available but only wind components (`ua` and `va`). 
-The lowest model level is substantially higher than 10m, namely around 80m. 
-For lack of comparability, NorESM1-M is thus excluded here. 
-
+Land use change data is taken from LUH and can be retrieved by executing `download_LUH1.sh`. 
 
 ### Shapefile of exclusive economic zones (EEZ)
 
-The offshore assessment relies on the shapes of EEZ, in particular the World EEZ v11 (2019-11-18) shapefile that can be downloaded from https://www.marineregions.org/downloads.php 
+The offshore assessment relies on the shapes of EEZ, in particular the World EEZ v11 (2019-11-18) shapefile provided by the Flanders Marine Institute and available at https://doi.org/10.14284/386
 
 Download and extract the data to `data/EEZ/` and remove everything except for the LICENSE and `eez_v11.shp`.
+
+## Access to intermediate data and Figures
+
+Intermediate data (i.e., results from running everything under *Calculations* in `run_all.py`) as well as all figures are provided in a zenodo data repository.
+
+**Todo: Add link to zenodo once ready**
+
+## Anaconda environment
+
+The anaconda environment can be constructed from the provided files using
+
+`conda env create --file environment.yaml`
+
+You can activate it using 
+
+`conda activate kliwist_modelchain`
+
+on a UNIX system. You might have to use `source` on other systems. 
+
+## Figure overview
+| Figure | Filename | Creating python function |
+|---|---|---|
+| Fig. 1| windchange_mean.png | `plot_s10_maps.make_joint_plots()` |
+| Fig. 2 a-c | diff_landuse.png | `plot_lu_maps.make_LUH_maps()` |
+| Fig. 2d | pattern_correlation.png | `compute_plot_pattern_correlation.make_plot()` |
+| Fig. 3 | heatmap_mean_countries.jpeg | `plot_s10_country_heatmaps.make_s10_heatmaps(onshore=True)` |
+| Fig. 4 | heatmap_mean_countries_offshore.jpeg | `plot_s10_country_heatmaps.make_s10_heatmaps(onshore=False)` |
+| Fig. 5 a-c | scatter_diff_United Kingdom_offshore.jpeg | `plot_s10_scatter.make_s10_scatter(onshore=False)` |
+| Fig. 5d | Scatter_plot_United Kingdom_offshore_True.jpeg | `plot_temperature_gradient.make_all_plots()` |
+| Fig. 6a | Correlation_map_Europe.jpeg | `plot_temperature_gradient.make_all_plots()` |
+| Fig. 6b | Amplitude_map_Europe.jpeg | `plot_temperature_gradient.make_all_plots()` |
+
+
+All Figures can be created at once by executing the script `run_all.py` or the Notebook `run_all.ipynb`. Script and notebook execute the same code, so feel free to choose whichever route you prefer. 
