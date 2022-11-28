@@ -2,18 +2,18 @@
 
 Code underlying analysis performed in 
 
-Wohland, J., 2021, Process-based climate change impact assessment for European winds using EURO-CORDEX and global models
+> Jan Wohland, Process-based climate change impact assessment for European winds using EURO-CORDEX and global models, Environmental Research Letters (provisionally accepted), 2022
 
 If you use content of this repository or code derived from it in academic work, please cite the above publication. 
 
 The intention of this repository is to document the analysis in an attempt to make scientific work more transparent and reproducible. 
 
 
-## Access to input data 
+## Access to raw input data 
 
 ### Climate model data
 
-Most data is accessed using the `intake` package in the DKRZ ecosystem. Catalogue data is made available in the `output` folder to enable reproducibility at other institutions as well. 
+Most data is accessed using the `intake` package in the DKRZ ecosystem. Intermediate data is made available in the `output` folder to enable reproducibility at other institutions as well, see below for the link and instructions. 
 
 ### Land use change data
 
@@ -25,11 +25,9 @@ The offshore assessment relies on the shapes of EEZ, in particular the World EEZ
 
 Download and extract the data to `data/EEZ/` and remove everything except for the LICENSE and `eez_v11.shp`.
 
-## Access to intermediate data and Figures
+## Access to intermediate data
 
-Intermediate data (i.e., results from running everything under *Calculations* in `run_all.py`) as well as all figures are provided in a zenodo data repository.
-
-**Todo: Add link to zenodo once ready**
+Intermediate data (i.e., results from running everything under *Calculations* in `run_all.py`) are provided in a zenodo data repository. Download the data from https://doi.org/10.5281/zenodo.7372998, extract the zipped `output.zip` folder and move it into the same folder as `code`.
 
 ## Anaconda environment
 
