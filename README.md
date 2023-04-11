@@ -2,7 +2,7 @@
 
 Code underlying analysis performed in 
 
-> Jan Wohland, Process-based climate change impact assessment for European winds using EURO-CORDEX and global models, Environmental Research Letters (provisionally accepted), 2022
+> Jan Wohland, Process-based climate change impact assessment for European winds using EURO-CORDEX and global models, Environmental Research Letters, Vol. 17, Number 12, 2022, https://doi.org/10.1088/1748-9326/aca77f
 
 If you use content of this repository or code derived from it in academic work, please cite the above publication. 
 
